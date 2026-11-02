@@ -7,6 +7,7 @@ import br.edu.ufcg.psoftarena.Model.Professor;
 import br.edu.ufcg.psoftarena.Model.Turma;
 import br.edu.ufcg.psoftarena.Repository.ProfessorRepository;
 import br.edu.ufcg.psoftarena.Repository.TurmaRepository;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,6 +24,8 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -47,6 +50,9 @@ public class TurmaControllerTests {
 
     @Autowired
     ProfessorRepository professorRepository;
+
+    @Autowired
+    EntityManager entityManager;
 
     @AfterEach
     void tearDown() {
@@ -84,8 +90,8 @@ public class TurmaControllerTests {
         TurmaPostPutDto dto = turmaPostPutDto("Turma A", "TURMA-A", "2026.2", professor.getId());
 
         String responseJSONString = driver.perform(post(URI_TURMA)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated())
                 .andDo(print())
                 .andReturn().getResponse().getContentAsString();
@@ -108,8 +114,8 @@ public class TurmaControllerTests {
         TurmaPostPutDto dto = turmaPostPutDto("", "", "", professor.getId());
 
         driver.perform(post(URI_TURMA)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())
                 .andDo(print());
 
@@ -122,8 +128,8 @@ public class TurmaControllerTests {
         TurmaPostPutDto dto = turmaPostPutDto("Turma A", "TURMA-A", "2026.2", 999L);
 
         driver.perform(post(URI_TURMA)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isNotFound())
                 .andDo(print());
 
@@ -138,8 +144,8 @@ public class TurmaControllerTests {
         TurmaPostPutDto dto = turmaPostPutDto("Turma B", "TURMA-A", "2026.2", professor.getId());
 
         driver.perform(post(URI_TURMA)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isConflict())
                 .andDo(print());
 
@@ -154,12 +160,14 @@ public class TurmaControllerTests {
         salvarTurma("Turma B", "TURMA-B", "2026.1", professor, StatusTurma.ENCERRADA);
 
         String responseJSONString = driver.perform(get(URI_TURMA)
-                        .contentType(MediaType.APPLICATION_JSON))
+                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andDo(print())
                 .andReturn().getResponse().getContentAsString();
 
-        List<TurmaResponseDto> resultado = objectMapper.readValue(responseJSONString, new TypeReference<List<TurmaResponseDto>>() {});
+        List<TurmaResponseDto> resultado = objectMapper.readValue(responseJSONString,
+                new TypeReference<List<TurmaResponseDto>>() {
+                });
         assertEquals(2, resultado.size());
     }
 
@@ -172,13 +180,15 @@ public class TurmaControllerTests {
         salvarTurma("Turma B", "TURMA-B", "2026.2", professorB, StatusTurma.ATIVA);
 
         String responseJSONString = driver.perform(get(URI_TURMA)
-                        .param("professorId", String.valueOf(professorA.getId()))
-                        .contentType(MediaType.APPLICATION_JSON))
+                .param("professorId", String.valueOf(professorA.getId()))
+                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andDo(print())
                 .andReturn().getResponse().getContentAsString();
 
-        List<TurmaResponseDto> resultado = objectMapper.readValue(responseJSONString, new TypeReference<List<TurmaResponseDto>>() {});
+        List<TurmaResponseDto> resultado = objectMapper.readValue(responseJSONString,
+                new TypeReference<List<TurmaResponseDto>>() {
+                });
         assertEquals(1, resultado.size());
         assertEquals(professorA.getId(), resultado.get(0).getProfessor().getId().longValue());
     }
@@ -190,7 +200,7 @@ public class TurmaControllerTests {
         Turma turma = salvarTurma("Turma A", "TURMA-A", "2026.2", professor, StatusTurma.ATIVA);
 
         String responseJSONString = driver.perform(get(URI_TURMA + "/" + turma.getId())
-                        .contentType(MediaType.APPLICATION_JSON))
+                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andDo(print())
                 .andReturn().getResponse().getContentAsString();
@@ -204,7 +214,7 @@ public class TurmaControllerTests {
     @DisplayName("Teste para buscar uma turma inexistente")
     void testQuandoBuscamosUmaTurmaInexistente() throws Exception {
         driver.perform(get(URI_TURMA + "/999")
-                        .contentType(MediaType.APPLICATION_JSON))
+                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andDo(print());
     }
@@ -217,8 +227,8 @@ public class TurmaControllerTests {
         TurmaPostPutDto dto = turmaPostPutDto("Turma A Editada", "TURMA-A-2", "2026.1", professor.getId());
 
         String responseJSONString = driver.perform(put(URI_TURMA + "/" + turma.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
                 .andDo(print())
                 .andReturn().getResponse().getContentAsString();
@@ -239,8 +249,8 @@ public class TurmaControllerTests {
         TurmaPostPutDto dto = turmaPostPutDto("Turma A Editada", "TURMA-A", "2026.2", professor.getId());
 
         driver.perform(put(URI_TURMA + "/" + turma.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isConflict())
                 .andDo(print());
     }
@@ -254,8 +264,8 @@ public class TurmaControllerTests {
         TurmaPostPutDto dto = turmaPostPutDto("Turma A", "TURMA-B", "2026.2", professor.getId());
 
         driver.perform(put(URI_TURMA + "/" + turmaA.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isConflict())
                 .andDo(print());
     }
@@ -267,7 +277,7 @@ public class TurmaControllerTests {
         Turma turma = salvarTurma("Turma A", "TURMA-A", "2026.2", professor, StatusTurma.ATIVA);
 
         String responseJSONString = driver.perform(put(URI_TURMA + "/" + turma.getId() + "/encerrar")
-                        .contentType(MediaType.APPLICATION_JSON))
+                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andDo(print())
                 .andReturn().getResponse().getContentAsString();
@@ -276,7 +286,7 @@ public class TurmaControllerTests {
         assertEquals(StatusTurma.ENCERRADA, resultado.getStatus());
 
         driver.perform(get(URI_TURMA + "/" + turma.getId())
-                        .contentType(MediaType.APPLICATION_JSON))
+                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andDo(print());
     }
@@ -288,8 +298,103 @@ public class TurmaControllerTests {
         Turma turma = salvarTurma("Turma A", "TURMA-A", "2026.2", professor, StatusTurma.ENCERRADA);
 
         driver.perform(put(URI_TURMA + "/" + turma.getId() + "/encerrar")
-                        .contentType(MediaType.APPLICATION_JSON))
+                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isConflict())
                 .andDo(print());
+    }
+
+    @Test
+    @DisplayName("Teste para editar uma turma com professor inexistente não altera a turma")
+    void testQuandoEditamosUmaTurmaComProfessorInexistente() throws Exception {
+        Professor professor = salvarProfessor("Professor A");
+        Turma turma = salvarTurma("Turma A", "TURMA-A", "2026.2", professor, StatusTurma.ATIVA);
+        TurmaPostPutDto dto = turmaPostPutDto("Turma A Editada", "TURMA-A-2", "2026.1", 999L);
+
+        driver.perform(put(URI_TURMA + "/" + turma.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNotFound())
+                .andDo(print());
+
+        Turma turmaAposErro = turmaRepository.findById(turma.getId()).orElseThrow();
+        assertEquals("Turma A", turmaAposErro.getNome());
+        assertEquals("TURMA-A", turmaAposErro.getCodigo());
+        assertEquals("2026.2", turmaAposErro.getPeriodoLetivo());
+        assertEquals(professor.getId(), turmaAposErro.getProfessor().getId());
+    }
+
+    @Test
+    @DisplayName("Teste para editar uma turma enviando professor_id nulo")
+    void testQuandoEditamosUmaTurmaComProfessorIdNulo() throws Exception {
+        Professor professor = salvarProfessor("Professor A");
+        Turma turma = salvarTurma("Turma A", "TURMA-A", "2026.2", professor, StatusTurma.ATIVA);
+        TurmaPostPutDto dto = turmaPostPutDto("Turma A Editada", "TURMA-A-2", "2026.1", null);
+
+        driver.perform(put(URI_TURMA + "/" + turma.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andDo(print());
+
+        Turma turmaAposErro = turmaRepository.findById(turma.getId()).orElseThrow();
+        assertEquals("Turma A", turmaAposErro.getNome());
+        assertNotNull(turmaAposErro.getProfessor());
+    }
+
+    @Test
+    @DisplayName("Teste para excluir um professor desvincula as turmas dele")
+    void testQuandoExcluimosUmProfessorComTurmas() throws Exception {
+        Professor professorA = salvarProfessor("Professor A");
+        Professor professorB = salvarProfessor("Professor B");
+        Turma turmaAtiva = salvarTurma("Turma A", "TURMA-A", "2026.2", professorA, StatusTurma.ATIVA);
+        Turma turmaEncerrada = salvarTurma("Turma B", "TURMA-B", "2026.1", professorA, StatusTurma.ENCERRADA);
+        Turma turmaDeOutro = salvarTurma("Turma C", "TURMA-C", "2026.2", professorB, StatusTurma.ATIVA);
+        entityManager.flush();
+        entityManager.clear();
+
+        driver.perform(delete("/professores/" + professorA.getId()))
+                .andExpect(status().isNoContent())
+                .andDo(print());
+
+        // O desvínculo é feito pelo banco (ON DELETE SET NULL): força o delete e relê
+        // do banco
+        entityManager.flush();
+        entityManager.clear();
+
+        assertEquals(false, professorRepository.existsById(professorA.getId()));
+        assertEquals(3, turmaRepository.findAll().size());
+        assertNull(turmaRepository.findById(turmaAtiva.getId()).orElseThrow().getProfessor());
+        assertNull(turmaRepository.findById(turmaEncerrada.getId()).orElseThrow().getProfessor());
+        assertEquals(professorB.getId(),
+                turmaRepository.findById(turmaDeOutro.getId()).orElseThrow().getProfessor().getId());
+
+        String responseJSONString = driver.perform(get(URI_TURMA + "/" + turmaAtiva.getId())
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn().getResponse().getContentAsString();
+
+        TurmaResponseDto resultado = objectMapper.readValue(responseJSONString, TurmaResponseDto.class);
+        assertEquals("TURMA-A", resultado.getCodigo());
+        assertNull(resultado.getProfessor());
+    }
+
+    @Test
+    @DisplayName("Teste para editar uma turma sem professor informando um novo professor")
+    void testQuandoEditamosUmaTurmaSemProfessor() throws Exception {
+        Professor professor = salvarProfessor("Professor A");
+        Turma turma = salvarTurma("Turma A", "TURMA-A", "2026.2", null, StatusTurma.ATIVA);
+        TurmaPostPutDto dto = turmaPostPutDto("Turma A", "TURMA-A", "2026.2", professor.getId());
+
+        String responseJSONString = driver.perform(put(URI_TURMA + "/" + turma.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn().getResponse().getContentAsString();
+
+        TurmaResponseDto resultado = objectMapper.readValue(responseJSONString, TurmaResponseDto.class);
+        assertNotNull(resultado.getProfessor());
+        assertEquals(professor.getId(), resultado.getProfessor().getId().longValue());
     }
 }
