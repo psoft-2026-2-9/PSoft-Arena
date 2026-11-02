@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -59,6 +60,7 @@ public class TurmaCrudPadraoService implements TurmaCrudService {
     }
 
     @Override
+    @Transactional
     public TurmaResponseDto updateTurma(Long id, TurmaPostPutDto turmaPostPutDto) {
         Turma turma = getExistingTurma(id);
         if (turma.getStatus() == StatusTurma.ENCERRADA) {
@@ -67,10 +69,13 @@ public class TurmaCrudPadraoService implements TurmaCrudService {
         if (turmaRepository.existsByCodigoAndIdNot(turmaPostPutDto.getCodigo(), id)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Código de turma já cadastrado");
         }
+        
+        Professor professor = getExistingProfessor(turmaPostPutDto.getProfessorId());
+
         turma.setNome(turmaPostPutDto.getNome());
         turma.setCodigo(turmaPostPutDto.getCodigo());
         turma.setPeriodoLetivo(turmaPostPutDto.getPeriodoLetivo());
-        turma.setProfessor(getExistingProfessor(turmaPostPutDto.getProfessorId()));
+        turma.setProfessor(professor);
         return modelMapper.map(turmaRepository.save(turma), TurmaResponseDto.class);
     }
 
@@ -88,7 +93,8 @@ public class TurmaCrudPadraoService implements TurmaCrudService {
     public void validarTurmaAtiva(Long id) {
         Turma turma = getExistingTurma(id);
         if (turma.getStatus() == StatusTurma.ENCERRADA) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Turma encerrada não pode receber novas associações ou atividades");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Turma encerrada não pode receber novas associações ou atividades");
         }
     }
 
