@@ -133,6 +133,16 @@ public class TurmaCrudPadraoService implements TurmaCrudService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<EstudanteResponseDto> listarEstudantes(Long turmaId) {
+        Turma turma = getExistingTurma(turmaId);
+
+        return turma.getEstudantes().stream()
+                .map(estudante -> modelMapper.map(estudante, EstudanteResponseDto.class))
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public void validarEstudantePertenceTurma(Long turmaId, Long estudanteId) {
         Turma turma = getExistingTurma(turmaId);
 
