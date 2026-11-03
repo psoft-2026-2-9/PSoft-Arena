@@ -6,7 +6,9 @@ import br.edu.ufcg.psoftarena.Model.Estudante;
 import br.edu.ufcg.psoftarena.Repository.EstudanteRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -21,6 +23,9 @@ public class EstudanteCrudPadraoService implements EstudanteCrudService {
 
     @Override
     public EstudanteResponseDto criarEstudante(EstudantePostPutDto estudantePostPutDto) {
+        if (estudanteRepository.existsByMatricula(estudantePostPutDto.getMatricula())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Matrícula de estudante já cadastrada");
+        }
         Estudante estudante = modelMapper.map(estudantePostPutDto, Estudante.class);
         return modelMapper.map(estudanteRepository.save(estudante), EstudanteResponseDto.class);
     }
@@ -35,14 +40,21 @@ public class EstudanteCrudPadraoService implements EstudanteCrudService {
 
     @Override
     public EstudanteResponseDto buscarEstudante(Long id) {
-        Estudante estudante = estudanteRepository.findById(id).orElseThrow();
-        return modelMapper.map(estudante, EstudanteResponseDto.class);
+        return modelMapper.map(getExistingEstudante(id), EstudanteResponseDto.class);
     }
 
     @Override
     public EstudanteResponseDto editarEstudante(Long id, EstudantePostPutDto estudantePostPutDto) {
-        Estudante estudante = estudanteRepository.findById(id).orElseThrow();
+        Estudante estudante = getExistingEstudante(id);
+        if (estudanteRepository.existsByMatriculaAndIdNot(estudantePostPutDto.getMatricula(), id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Matrícula de estudante já cadastrada");
+        }
         modelMapper.map(estudantePostPutDto, estudante);
         return modelMapper.map(estudanteRepository.save(estudante), EstudanteResponseDto.class);
+    }
+
+    private Estudante getExistingEstudante(Long id) {
+        return estudanteRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Estudante não encontrado"));
     }
 }
