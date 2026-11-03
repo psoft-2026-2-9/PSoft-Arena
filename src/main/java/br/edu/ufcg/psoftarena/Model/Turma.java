@@ -9,7 +9,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Builder
@@ -46,4 +47,15 @@ public class Turma {
     @Column(nullable = false)
     @JsonProperty("status")
     private StatusTurma status;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable (
+        name = "tb_turma_estudante",
+        joinColumns = @JoinColumn(name = "turma_id"), 
+        inverseJoinColumns = @JoinColumn(name = "estudante_id"),
+        uniqueConstraints = @UniqueConstraint(columnNames = {"turma_id", "estudante_id"})
+        )
+    @Builder.Default
+    @JsonProperty("estudantes")
+    private Set<Estudante> estudantes = new HashSet<>();
 }

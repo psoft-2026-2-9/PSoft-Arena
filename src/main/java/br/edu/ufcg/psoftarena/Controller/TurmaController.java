@@ -40,4 +40,24 @@ public class TurmaController {
     public ResponseEntity<?> encerrarTurma(@PathVariable Long id) {
         return ResponseEntity.status(HttpStatus.OK).body(turmaCrudService.encerrarTurma(id));
     }
+
+     @PostMapping("/{turmaId}/estudantes/{estudanteId}")
+    public ResponseEntity<?> adicionarEstudante(@PathVariable Long turmaId,
+                                                @PathVariable Long estudanteId) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(turmaCrudService.adicionarEstudante(turmaId, estudanteId));
+    }
+
+    @DeleteMapping("/{turmaId}/estudantes/{estudanteId}")
+    public ResponseEntity<?> removerEstudante(@PathVariable Long turmaId,
+                                              @PathVariable Long estudanteId) {
+        turmaCrudService.removerEstudante(turmaId, estudanteId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{turmaId}/estudantes")
+    public ResponseEntity<?> listarEstudantes(@PathVariable Long turmaId) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(turmaCrudService.listarEstudantes(turmaId));
+    }
 }

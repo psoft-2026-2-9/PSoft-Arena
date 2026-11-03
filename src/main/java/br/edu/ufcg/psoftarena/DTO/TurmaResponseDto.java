@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.List;
 
 @Data
 @Builder
@@ -30,4 +31,7 @@ public class TurmaResponseDto {
 
     @JsonProperty("status")
     private StatusTurma status;
+
+    @JsonProperty("estudantes")
+    private List<EstudanteResponseDto> estudantes;
 }
