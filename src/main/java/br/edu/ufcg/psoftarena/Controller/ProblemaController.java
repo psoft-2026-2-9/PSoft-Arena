@@ -36,6 +36,11 @@ public class ProblemaController {
         return ResponseEntity.status(HttpStatus.OK).body(problemaService.updateProblema(id, problemaPostPutDto));
     }
 
+    @PutMapping("/{id}/inativar")
+    public ResponseEntity<?> inativarProblema(@PathVariable Long id) {
+        return ResponseEntity.status(HttpStatus.OK).body(problemaService.inativarProblema(id));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteProblema(@PathVariable Long id) {
         problemaService.deleteProblema(id);

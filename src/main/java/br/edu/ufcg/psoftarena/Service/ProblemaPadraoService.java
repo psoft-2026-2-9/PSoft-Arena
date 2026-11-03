@@ -54,7 +54,16 @@ public class ProblemaPadraoService implements ProblemaService {
 
     @Override
     public void deleteProblema(Long id) {
+        // tem que validar ainda se o problema faz parte de alguma atividade
         problemaRepository.delete(getExistingProblema(id));
+    }
+
+    @Override
+    public ProblemaResponseDto inativarProblema(Long id) {
+        Problema problema = getExistingProblema(id);
+        problema.setStatus(StatusProblema.INATIVO);
+
+        return modelMapper.map(problemaRepository.save(problema), ProblemaResponseDto.class);
     }
 
     private Problema getExistingProblema(Long id) {
