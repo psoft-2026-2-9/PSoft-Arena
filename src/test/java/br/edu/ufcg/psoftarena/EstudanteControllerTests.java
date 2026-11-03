@@ -19,6 +19,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -231,5 +232,25 @@ public class EstudanteControllerTests {
                 .andDo(print());
 
         assertEquals("124210002", estudanteRepository.findById(estudante.getId()).get().getMatricula());
+    }
+
+    @Test
+    @DisplayName("Teste para remover um estudante")
+    void testQuandoRemovemosUmEstudante() throws Exception {
+        Estudante estudante = salvarEstudante("Maria", "124210001", "maria@ccc.ufcg.edu.br");
+
+        driver.perform(delete(URI_ESTUDANTE + "/" + estudante.getId()))
+                .andExpect(status().isNoContent())
+                .andDo(print());
+
+        assertEquals(0, estudanteRepository.findAll().size());
+    }
+
+    @Test
+    @DisplayName("Teste para remover um estudante inexistente")
+    void testQuandoRemovemosUmEstudanteInexistente() throws Exception {
+        driver.perform(delete(URI_ESTUDANTE + "/999999"))
+                .andExpect(status().isNotFound())
+                .andDo(print());
     }
 }

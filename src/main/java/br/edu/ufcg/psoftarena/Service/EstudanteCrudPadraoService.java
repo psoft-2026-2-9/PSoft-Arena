@@ -54,6 +54,17 @@ public class EstudanteCrudPadraoService implements EstudanteCrudService {
         return modelMapper.map(salvarMatriculaUnica(estudante), EstudanteResponseDto.class);
     }
 
+    @Override
+    public void removerEstudante(Long id) {
+        Estudante estudante = getExistingEstudante(id);
+        try {
+            estudanteRepository.delete(estudante);
+            estudanteRepository.flush();
+        } catch (DataIntegrityViolationException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Estudante está associado a uma ou mais turmas", e);
+        }
+    }
+
     private Estudante salvarMatriculaUnica(Estudante estudante) {
         try {
             return estudanteRepository.saveAndFlush(estudante);

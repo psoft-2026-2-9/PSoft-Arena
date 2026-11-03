@@ -19,7 +19,9 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -78,6 +80,20 @@ public class EstudanteConcorrenciaTests {
         driver.perform(put(URI_ESTUDANTE + "/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto())))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    @DisplayName("Remoção de estudante associado a uma turma retorna 409, não 500")
+    void testRemocaoDeEstudanteAssociadoATurma() throws Exception {
+        Estudante existente = Estudante.builder()
+                .id(1L).nome("João").matricula("124210002").email("joao@ccc.ufcg.edu.br")
+                .build();
+        when(estudanteRepository.findById(1L)).thenReturn(Optional.of(existente));
+        doThrow(new DataIntegrityViolationException("foreign key: tb_turma_estudante"))
+                .when(estudanteRepository).flush();
+
+        driver.perform(delete(URI_ESTUDANTE + "/1"))
                 .andExpect(status().isConflict());
     }
 }
