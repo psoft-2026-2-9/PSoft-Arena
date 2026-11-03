@@ -13,4 +13,6 @@ public interface EstudanteCrudService {
     EstudanteResponseDto buscarEstudante(Long id);
 
     EstudanteResponseDto editarEstudante(Long id, EstudantePostPutDto estudantePostPutDto);
+
+    void removerEstudante(Long id);
 }

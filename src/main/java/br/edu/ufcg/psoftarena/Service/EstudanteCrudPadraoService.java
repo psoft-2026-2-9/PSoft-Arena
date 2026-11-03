@@ -6,6 +6,7 @@ import br.edu.ufcg.psoftarena.Model.Estudante;
 import br.edu.ufcg.psoftarena.Repository.EstudanteRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -27,7 +28,7 @@ public class EstudanteCrudPadraoService implements EstudanteCrudService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Matrícula de estudante já cadastrada");
         }
         Estudante estudante = modelMapper.map(estudantePostPutDto, Estudante.class);
-        return modelMapper.map(estudanteRepository.save(estudante), EstudanteResponseDto.class);
+        return modelMapper.map(salvarMatriculaUnica(estudante), EstudanteResponseDto.class);
     }
 
     @Override
@@ -50,7 +51,26 @@ public class EstudanteCrudPadraoService implements EstudanteCrudService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Matrícula de estudante já cadastrada");
         }
         modelMapper.map(estudantePostPutDto, estudante);
-        return modelMapper.map(estudanteRepository.save(estudante), EstudanteResponseDto.class);
+        return modelMapper.map(salvarMatriculaUnica(estudante), EstudanteResponseDto.class);
+    }
+
+    @Override
+    public void removerEstudante(Long id) {
+        Estudante estudante = getExistingEstudante(id);
+        try {
+            estudanteRepository.delete(estudante);
+            estudanteRepository.flush();
+        } catch (DataIntegrityViolationException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Estudante está associado a uma ou mais turmas", e);
+        }
+    }
+
+    private Estudante salvarMatriculaUnica(Estudante estudante) {
+        try {
+            return estudanteRepository.saveAndFlush(estudante);
+        } catch (DataIntegrityViolationException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Matrícula de estudante já cadastrada", e);
+        }
     }
 
     private Estudante getExistingEstudante(Long id) {

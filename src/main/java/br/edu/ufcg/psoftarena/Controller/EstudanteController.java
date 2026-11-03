@@ -49,4 +49,10 @@ public class EstudanteController {
                 .status(HttpStatus.OK)
                 .body(estudanteCrudService.editarEstudante(id, estudantePostPutDto));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> removerEstudante(@PathVariable Long id) {
+        estudanteCrudService.removerEstudante(id);
+        return ResponseEntity.noContent().build();
+    }
 }
