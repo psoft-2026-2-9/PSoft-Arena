@@ -2,6 +2,8 @@ package br.edu.ufcg.psoftarena.Model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,5 +23,6 @@ public class Professor {
     private long id;
 
     @JsonProperty("nome")
+    @NotEmpty
     private String nome;
 }

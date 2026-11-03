@@ -1,7 +1,9 @@
 package br.edu.ufcg.psoftarena.DTO;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,8 +26,10 @@ public class ProblemaPostPutDto {
     private String descricao;
 
     @JsonProperty("requisitos_funcionais")
+    @Column(nullable = false)
     private List<String> requisitosFuncionais;
 
     @JsonProperty("requisitos_de_projeto")
+    @Column(nullable = false)
     private List<String> requisitosDeProjeto;
 }
