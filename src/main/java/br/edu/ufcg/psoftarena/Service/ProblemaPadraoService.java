@@ -61,7 +61,7 @@ public class ProblemaPadraoService implements ProblemaService {
     @Override
     public ProblemaResponseDto inativarProblema(Long id) {
         Problema problema = getExistingProblema(id);
-        problema.setStatus(StatusProblema.ATIVO);
+        problema.setStatus(StatusProblema.INATIVO);
 
         return modelMapper.map(problemaRepository.save(problema), ProblemaResponseDto.class);
     }
