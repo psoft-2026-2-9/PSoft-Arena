@@ -16,4 +16,6 @@ public interface ProblemaService {
     ProblemaResponseDto updateProblema(Long id, ProblemaPostPutDto problemaPostPutDto);
 
     void deleteProblema(Long id);
+
+    ProblemaResponseDto inativarProblema(Long id);
 }
