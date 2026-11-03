@@ -168,4 +168,68 @@ public class EstudanteControllerTests {
         assertEquals("Maria Silva", resultado.getNome());
         assertEquals("maria.silva@ccc.ufcg.edu.br", resultado.getEmail());
     }
+
+    @Test
+    @DisplayName("Teste para criação de um estudante com matrícula duplicada")
+    void testQuandoCriamosUmEstudanteComMatriculaDuplicada() throws Exception {
+        salvarEstudante("Maria", "124210001", "maria@ccc.ufcg.edu.br");
+        EstudantePostPutDto estudantePostPutDto = EstudantePostPutDto.builder()
+                .nome("João")
+                .matricula("124210001")
+                .email("joao@ccc.ufcg.edu.br")
+                .build();
+
+        driver.perform(post(URI_ESTUDANTE)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(estudantePostPutDto)))
+                .andExpect(status().isConflict())
+                .andDo(print());
+
+        assertEquals(1, estudanteRepository.findAll().size());
+    }
+
+    @Test
+    @DisplayName("Teste para buscar um estudante inexistente")
+    void testQuandoBuscamosUmEstudanteInexistente() throws Exception {
+        driver.perform(get(URI_ESTUDANTE + "/999999")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("Teste para editar um estudante inexistente")
+    void testQuandoEditamosUmEstudanteInexistente() throws Exception {
+        EstudantePostPutDto estudantePostPutDto = EstudantePostPutDto.builder()
+                .nome("Maria")
+                .matricula("124210001")
+                .email("maria@ccc.ufcg.edu.br")
+                .build();
+
+        driver.perform(put(URI_ESTUDANTE + "/999999")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(estudantePostPutDto)))
+                .andExpect(status().isNotFound())
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("Teste para editar um estudante com matrícula de outro estudante")
+    void testQuandoEditamosUmEstudanteComMatriculaDeOutro() throws Exception {
+        salvarEstudante("Maria", "124210001", "maria@ccc.ufcg.edu.br");
+        Estudante estudante = salvarEstudante("João", "124210002", "joao@ccc.ufcg.edu.br");
+        EstudantePostPutDto estudantePostPutDto = EstudantePostPutDto.builder()
+                .nome("João")
+                .matricula("124210001")
+                .email("joao@ccc.ufcg.edu.br")
+                .build();
+
+        driver.perform(put(URI_ESTUDANTE + "/" + estudante.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(estudantePostPutDto)))
+                .andExpect(status().isConflict())
+                .andDo(print());
+
+        assertEquals("124210002", estudanteRepository.findById(estudante.getId()).get().getMatricula());
+    }
 }
