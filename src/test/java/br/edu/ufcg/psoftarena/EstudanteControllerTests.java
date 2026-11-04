@@ -2,8 +2,11 @@ package br.edu.ufcg.psoftarena;
 
 import br.edu.ufcg.psoftarena.DTO.EstudantePostPutDto;
 import br.edu.ufcg.psoftarena.DTO.EstudanteResponseDto;
+import br.edu.ufcg.psoftarena.ENUM.StatusTurma;
 import br.edu.ufcg.psoftarena.Model.Estudante;
+import br.edu.ufcg.psoftarena.Model.Turma;
 import br.edu.ufcg.psoftarena.Repository.EstudanteRepository;
+import br.edu.ufcg.psoftarena.Repository.TurmaRepository;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -41,8 +44,12 @@ public class EstudanteControllerTests {
     @Autowired
     EstudanteRepository estudanteRepository;
 
+    @Autowired
+    TurmaRepository turmaRepository;
+
     @AfterEach
     void tearDown() {
+        turmaRepository.deleteAll();
         estudanteRepository.deleteAll();
     }
 
@@ -252,5 +259,25 @@ public class EstudanteControllerTests {
         driver.perform(delete(URI_ESTUDANTE + "/999999"))
                 .andExpect(status().isNotFound())
                 .andDo(print());
+    }
+
+    @Test
+    @DisplayName("Teste para remover um estudante associado a uma turma")
+    void testQuandoRemovemosUmEstudanteAssociadoATurma() throws Exception {
+        Estudante estudante = salvarEstudante("Maria", "124210001", "maria@ccc.ufcg.edu.br");
+        Turma turma = Turma.builder()
+                .nome("Projeto de Software")
+                .codigo("PSOFT-01")
+                .periodoLetivo("2026.2")
+                .status(StatusTurma.ATIVA)
+                .build();
+        turma.getEstudantes().add(estudante);
+        turmaRepository.save(turma);
+
+        driver.perform(delete(URI_ESTUDANTE + "/" + estudante.getId()))
+                .andExpect(status().isConflict())
+                .andDo(print());
+
+        assertEquals(1, estudanteRepository.findAll().size());
     }
 }

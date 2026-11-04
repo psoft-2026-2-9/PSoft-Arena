@@ -4,6 +4,7 @@ import br.edu.ufcg.psoftarena.DTO.EstudantePostPutDto;
 import br.edu.ufcg.psoftarena.DTO.EstudanteResponseDto;
 import br.edu.ufcg.psoftarena.Model.Estudante;
 import br.edu.ufcg.psoftarena.Repository.EstudanteRepository;
+import br.edu.ufcg.psoftarena.Repository.TurmaRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -21,6 +22,9 @@ public class EstudanteCrudPadraoService implements EstudanteCrudService {
 
     @Autowired
     EstudanteRepository estudanteRepository;
+
+    @Autowired
+    TurmaRepository turmaRepository;
 
     @Override
     public EstudanteResponseDto criarEstudante(EstudantePostPutDto estudantePostPutDto) {
@@ -57,6 +61,9 @@ public class EstudanteCrudPadraoService implements EstudanteCrudService {
     @Override
     public void removerEstudante(Long id) {
         Estudante estudante = getExistingEstudante(id);
+        if (turmaRepository.existsByEstudantes_Id(id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Estudante está associado a uma ou mais turmas");
+        }
         try {
             estudanteRepository.delete(estudante);
             estudanteRepository.flush();
