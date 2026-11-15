@@ -103,7 +103,7 @@ public class AtividadeControllerTests {
         return atividadeRepository.save(Atividade.builder()
                 .titulo("Atividade 1")
                 .descricao("Implemente o problema X")
-                .prazo(LocalDateTime.of(2026, 12, 1, 23, 59))
+                .prazo(LocalDateTime.now().plusDays(7))
                 .status(status)
                 .turma(turma)
                 .problema(problema)
@@ -115,11 +115,15 @@ public class AtividadeControllerTests {
     }
 
     String jsonAtividade(Long turmaId, Long problemaId, Long estrategiaId) {
+        return jsonAtividade(turmaId, problemaId, estrategiaId, LocalDateTime.now().plusDays(7));
+    }
+
+    String jsonAtividade(Long turmaId, Long problemaId, Long estrategiaId, LocalDateTime prazo) {
         return """
                 {
                     "titulo": "Atividade 1",
                     "descricao": "Implemente o problema X",
-                    "prazo": "2026-12-01T23:59:00",
+                    "prazo": "%s",
                     "turma_id": %d,
                     "problema_id": %d,
                     "estrategia_id": %d,
@@ -127,7 +131,7 @@ public class AtividadeControllerTests {
                     "llm_url_api": "https://api.x.ai/v1",
                     "llm_chave_api": "sk-test"
                 }
-                """.formatted(turmaId, problemaId, estrategiaId);
+                """.formatted(prazo, turmaId, problemaId, estrategiaId);
     }
 
     @Test
@@ -167,6 +171,24 @@ public class AtividadeControllerTests {
         driver.perform(post(URI_ATIVIDADE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andDo(print());
+
+        assertEquals(0, atividadeRepository.count());
+    }
+
+    @Test
+    @DisplayName("Rejeita atividade com prazo no passado")
+    void deveRejeitarAtividadeComPrazoNoPassado() throws Exception {
+        Professor professor = salvarProfessor();
+        Turma turma = salvarTurma(professor, StatusTurma.ATIVA);
+        Problema problema = salvarProblema(StatusProblema.ATIVO);
+        Estrategia estrategia = salvarEstrategia();
+
+        driver.perform(post(URI_ATIVIDADE)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonAtividade(turma.getId(), problema.getId(), estrategia.getId(),
+                                LocalDateTime.now().minusDays(1))))
                 .andExpect(status().isBadRequest())
                 .andDo(print());
 

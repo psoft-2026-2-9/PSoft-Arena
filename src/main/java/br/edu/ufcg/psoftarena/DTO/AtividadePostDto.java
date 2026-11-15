@@ -1,6 +1,7 @@
 package br.edu.ufcg.psoftarena.DTO;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -26,6 +27,7 @@ public class AtividadePostDto {
 
     @JsonProperty("prazo")
     @NotNull(message = "Prazo da atividade não pode ser nulo")
+    @Future(message = "Prazo da atividade deve ser futuro")
     private LocalDateTime prazo;
 
     @JsonProperty("turma_id")
