@@ -9,7 +9,7 @@ import java.util.Optional;
 
 public interface AtividadeRepository extends JpaRepository<Atividade, Long> {
 
-   boolean existsByProblemaId(Long problemaId);
+    boolean existsByProblemaId(Long problemaId);
 
     @Query("""
             select a from Atividade a

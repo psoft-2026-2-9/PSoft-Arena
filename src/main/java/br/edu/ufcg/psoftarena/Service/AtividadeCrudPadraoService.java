@@ -140,7 +140,7 @@ public class AtividadeCrudPadraoService implements AtividadeCrudService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Atividade não encontrada"));
     }
 
-      private void validarEstudanteExiste(Long estudanteId) {
+    private void validarEstudanteExiste(Long estudanteId) {
         if (!estudanteRepository.existsById(estudanteId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Estudante não encontrado");
         }
