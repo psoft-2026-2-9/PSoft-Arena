@@ -19,6 +19,13 @@ import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import br.edu.ufcg.psoftarena.DTO.AtividadeConsultaResponseDto;
+import br.edu.ufcg.psoftarena.DTO.EstrategiaResumoDto;
+import br.edu.ufcg.psoftarena.DTO.ProblemaResponseDto;
+import br.edu.ufcg.psoftarena.DTO.TurmaResumoDto;
+import br.edu.ufcg.psoftarena.Repository.EstudanteRepository;
+import java.util.List;
+
 
 @Service
 public class AtividadeCrudPadraoService implements AtividadeCrudService {
@@ -37,6 +44,9 @@ public class AtividadeCrudPadraoService implements AtividadeCrudService {
 
     @Autowired
     TextEncryptor textEncryptor;
+
+    @Autowired
+    EstudanteRepository estudanteRepository;
 
     @Override
     @Transactional
@@ -82,6 +92,33 @@ public class AtividadeCrudPadraoService implements AtividadeCrudService {
         return toResponse(atividadeRepository.save(atividade));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<AtividadeConsultaResponseDto> listarAtividadesDoEstudante(Long estudanteId) {
+        validarEstudanteExiste(estudanteId);
+
+        return atividadeRepository.findAllByEstudanteId(estudanteId)
+                .stream()
+                .map(this::toConsultaResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AtividadeConsultaResponseDto consultarAtividadeDoEstudante(Long atividadeId, Long estudanteId) {
+        validarEstudanteExiste(estudanteId);
+
+        Atividade atividade = atividadeRepository.findByIdWithDetails(atividadeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Atividade não encontrada"));
+
+        if (!turmaRepository.existsByIdAndEstudantes_Id(atividade.getTurma().getId(), estudanteId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Estudante não participa da turma desta atividade");
+        }
+
+        return toConsultaResponse(atividade);
+    }
+
     private Turma getExistingTurma(Long id) {
         return turmaRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Turma não encontrada"));
@@ -102,6 +139,12 @@ public class AtividadeCrudPadraoService implements AtividadeCrudService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Atividade não encontrada"));
     }
 
+    private void validarEstudanteExiste(Long estudanteId) {
+        if (!estudanteRepository.existsById(estudanteId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Estudante não encontrado");
+        }
+    }
+
     private AtividadeResponseDto toResponse(Atividade atividade) {
         return AtividadeResponseDto.builder()
                 .id(atividade.getId())
@@ -114,6 +157,49 @@ public class AtividadeCrudPadraoService implements AtividadeCrudService {
                 .estrategiaId(atividade.getEstrategia().getId())
                 .llmModelo(atividade.getLlmModelo())
                 .llmUrlApi(atividade.getLlmUrlApi())
+                .build();
+    }
+
+    private AtividadeConsultaResponseDto toConsultaResponse(Atividade atividade) {
+        return AtividadeConsultaResponseDto.builder()
+                .id(atividade.getId())
+                .titulo(atividade.getTitulo())
+                .turma(toTurmaResumo(atividade.getTurma()))
+                .problema(toProblemaResponse(atividade.getProblema()))
+                .descricao(atividade.getDescricao())
+                .estrategiaAvaliacao(toEstrategiaResumo(atividade.getEstrategia()))
+                .prazo(atividade.getPrazo())
+                .status(atividade.getStatus())
+                .build();
+    }
+
+    private TurmaResumoDto toTurmaResumo(Turma turma) {
+        return TurmaResumoDto.builder()
+                .id(turma.getId())
+                .nome(turma.getNome())
+                .codigo(turma.getCodigo())
+                .periodoLetivo(turma.getPeriodoLetivo())
+                .status(turma.getStatus())
+                .build();
+    }
+
+    private ProblemaResponseDto toProblemaResponse(Problema problema) {
+        return ProblemaResponseDto.builder()
+                .id(problema.getId())
+                .titulo(problema.getTitulo())
+                .descricao(problema.getDescricao())
+                .requisitosFuncionais(problema.getRequisitosFuncionais())
+                .requisitosDeProjeto(problema.getRequisitosDeProjeto())
+                .status(problema.getStatus())
+                .build();
+    }
+
+    private EstrategiaResumoDto toEstrategiaResumo(Estrategia estrategia) {
+        return EstrategiaResumoDto.builder()
+                .id(estrategia.getId())
+                .nome(estrategia.getNome())
+                .tipo(estrategia.getTipo())
+                .descricao(estrategia.getDescricao())
                 .build();
     }
 }

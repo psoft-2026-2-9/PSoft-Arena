@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
+import br.edu.ufcg.psoftarena.DTO.AtividadeConsultaResponseDto;
+import java.util.List;
 
 @RestController
 @RequestMapping(value = "/atividades", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -29,5 +32,20 @@ public class AtividadeController {
     @PutMapping("/{id}/concluir")
     public ResponseEntity<?> concluirAtividade(@PathVariable Long id) {
         return ResponseEntity.status(HttpStatus.OK).body(atividadeService.concluirAtividade(id));
+    }
+
+    @GetMapping("/estudante/{estudanteId}")
+    public ResponseEntity<List<AtividadeConsultaResponseDto>> listarAtividadesDoEstudante(
+            @PathVariable Long estudanteId) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(atividadeService.listarAtividadesDoEstudante(estudanteId));
+    }
+
+    @GetMapping("/{atividadeId}/estudante/{estudanteId}")
+    public ResponseEntity<AtividadeConsultaResponseDto> consultarAtividadeDoEstudante(
+            @PathVariable Long atividadeId,
+            @PathVariable Long estudanteId) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(atividadeService.consultarAtividadeDoEstudante(atividadeId, estudanteId));
     }
 }
