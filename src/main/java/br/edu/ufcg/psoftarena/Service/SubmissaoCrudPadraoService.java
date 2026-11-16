@@ -2,7 +2,6 @@ package br.edu.ufcg.psoftarena.Service;
 
 import br.edu.ufcg.psoftarena.DTO.SubmissaoPostDto;
 import br.edu.ufcg.psoftarena.DTO.SubmissaoResponseDto;
-import br.edu.ufcg.psoftarena.ENUM.StatusAtividade;
 import br.edu.ufcg.psoftarena.ENUM.StatusSubmissao;
 import br.edu.ufcg.psoftarena.Model.Atividade;
 import br.edu.ufcg.psoftarena.Model.Estudante;
@@ -38,7 +37,7 @@ public class SubmissaoCrudPadraoService implements SubmissaoCrudService {
     @Transactional
     public SubmissaoResponseDto submeterSolucao(Long atividadeId, SubmissaoPostDto submissaoPostDto) {
         Atividade atividade = getExistingAtividade(atividadeId);
-        if (atividade.getStatus() != StatusAtividade.ABERTA) {
+        if (!atividade.aceitaSubmissao()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Atividade concluída não aceita novas submissões");
         }
         if (LocalDateTime.now().isAfter(atividade.getPrazo())) {
