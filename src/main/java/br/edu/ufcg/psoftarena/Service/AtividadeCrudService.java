@@ -13,5 +13,5 @@ public interface AtividadeCrudService {
 
     List<AtividadeConsultaResponseDto> listarAtividadesDoEstudante(Long estudanteId);
 
-    AtividadeConsultaResponseDto consultarAtividadeDoEstudante(Long atividadeId, Long estudanteId)
+    AtividadeConsultaResponseDto consultarAtividadeDoEstudante(Long atividadeId, Long estudanteId);
 }
