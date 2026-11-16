@@ -4,6 +4,7 @@ import br.edu.ufcg.psoftarena.DTO.ProblemaPostPutDto;
 import br.edu.ufcg.psoftarena.DTO.ProblemaResponseDto;
 import br.edu.ufcg.psoftarena.ENUM.StatusProblema;
 import br.edu.ufcg.psoftarena.Model.Problema;
+import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
 import br.edu.ufcg.psoftarena.Repository.ProblemaRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,9 @@ public class ProblemaPadraoService implements ProblemaService {
 
     @Autowired
     ProblemaRepository problemaRepository;
+
+    @Autowired
+    AtividadeRepository atividadeRepository;
 
     @Override
     public ProblemaResponseDto addProblema(ProblemaPostPutDto problemaPostPutDto) {
@@ -54,8 +58,13 @@ public class ProblemaPadraoService implements ProblemaService {
 
     @Override
     public void deleteProblema(Long id) {
-        // tem que validar ainda se o problema faz parte de alguma atividade
-        problemaRepository.delete(getExistingProblema(id));
+        // não pode ser deletado caso tenha um problema associado
+        Problema problema = getExistingProblema(id);
+        if (atividadeRepository.existsByProblemaId(id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Problema associado a uma atividade não pode ser removido");
+        }
+        problemaRepository.delete(problema);
     }
 
     @Override
