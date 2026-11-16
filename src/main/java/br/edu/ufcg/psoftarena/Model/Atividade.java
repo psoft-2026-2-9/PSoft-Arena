@@ -1,6 +1,9 @@
 package br.edu.ufcg.psoftarena.Model;
 
 import br.edu.ufcg.psoftarena.ENUM.StatusAtividade;
+import br.edu.ufcg.psoftarena.Model.State.AtividadeAberta;
+import br.edu.ufcg.psoftarena.Model.State.AtividadeConcluida;
+import br.edu.ufcg.psoftarena.Model.State.EstadoAtividade;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,6 +15,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -44,6 +48,10 @@ public class Atividade {
     @Column(nullable = false)
     private StatusAtividade status;
 
+    @Transient
+    @JsonIgnore
+    private EstadoAtividade estado;
+
     @ManyToOne
     @JoinColumn(name = "turma_id", nullable = false)
     private Turma turma;
@@ -66,4 +74,27 @@ public class Atividade {
     @Column(nullable = false)
     private String llmChaveApiCriptografada; // criptografar para assegurar a segurança pedida da chave
                                              // poderiamos so guardar ela e nunca expor no dto
+
+    public boolean aceitaSubmissao() {
+        return estadoAtual().aceitaSubmissao();
+    }
+
+    public boolean concluir() {
+        return estadoAtual().concluir(this);
+    }
+
+    public void mudarEstado(EstadoAtividade novoEstado) {
+        this.estado = novoEstado;
+        this.status = novoEstado.getStatus();
+    }
+
+    private EstadoAtividade estadoAtual() {
+        if (estado == null) {
+            estado = switch (status) {
+                case ABERTA -> new AtividadeAberta();
+                case CONCLUIDA -> new AtividadeConcluida();
+            };
+        }
+        return estado;
+    }
 }
