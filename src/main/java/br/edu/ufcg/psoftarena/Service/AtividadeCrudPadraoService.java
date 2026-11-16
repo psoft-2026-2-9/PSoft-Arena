@@ -75,11 +75,10 @@ public class AtividadeCrudPadraoService implements AtividadeCrudService {
     @Transactional
     public AtividadeResponseDto concluirAtividade(Long id) {
         Atividade atividade = getExistingAtividade(id);
-        if (atividade.getStatus() == StatusAtividade.CONCLUIDA) {
+        if (!atividade.concluir()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Atividade já está concluída");
         }
 
-        atividade.setStatus(StatusAtividade.CONCLUIDA);
         return toResponse(atividadeRepository.save(atividade));
     }
 
