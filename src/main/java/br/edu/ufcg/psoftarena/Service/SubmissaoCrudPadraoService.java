@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class SubmissaoCrudPadraoService implements SubmissaoCrudService {
@@ -78,6 +79,26 @@ public class SubmissaoCrudPadraoService implements SubmissaoCrudService {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Submissão não encontrada"));
 
         return encaminharParaFila(submissao);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SubmissaoResponseDto> listarSubmissoes(Long atividadeId, Long estudanteId) {
+        getExistingAtividade(atividadeId);
+        getExistingEstudante(estudanteId);
+        return submissaoRepository.findByAtividadeIdAndEstudanteIdOrderByVersaoDesc(atividadeId, estudanteId)
+                .stream().map(this::toResponse).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SubmissaoResponseDto consultarSubmissao(Long atividadeId, Long submissaoId, Long estudanteId) {
+        getExistingAtividade(atividadeId);
+        getExistingEstudante(estudanteId);
+        Submissao submissao = submissaoRepository
+                .findByIdAndAtividadeIdAndEstudanteId(submissaoId, atividadeId, estudanteId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Submissão não encontrada"));
+        return toResponse(submissao);
     }
 
     private SubmissaoResponseDto encaminharParaFila(Submissao submissao) {

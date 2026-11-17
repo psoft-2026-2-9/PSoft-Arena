@@ -15,6 +15,7 @@ import br.edu.ufcg.psoftarena.Model.Professor;
 import br.edu.ufcg.psoftarena.Model.State.Atividade.AtividadeAberta;
 import br.edu.ufcg.psoftarena.Model.State.Atividade.AtividadeConcluida;
 import br.edu.ufcg.psoftarena.Model.State.Atividade.EstadoAtividade;
+import br.edu.ufcg.psoftarena.Model.State.Subimissao.Processando;
 import br.edu.ufcg.psoftarena.Model.Turma;
 import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
 import br.edu.ufcg.psoftarena.Repository.EstudanteRepository;
@@ -56,6 +57,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -223,6 +225,112 @@ public class SubmissaoControllerTests {
                 .andDo(print())
                 .andReturn().getResponse().getContentAsString();
         return objectMapper.readValue(responseJSONString, SubmissaoResponseDto.class);
+    }
+
+    @Test
+    @DisplayName("Consulta lista apenas as versões do estudante e da atividade, da mais recente para a mais antiga")
+    void testListarSubmissoesFiltraEstudanteEAtividade() throws Exception {
+        var primeira = submeterComSucesso(atividade.getId(), estudante.getId());
+        var segunda = submeterComSucesso(atividade.getId(), estudante.getId());
+        Estudante outro = salvarEstudante();
+        matricularEstudanteNaTurma(outro);
+        submeterComSucesso(atividade.getId(), outro.getId());
+        Atividade outraAtividade = salvarAtividade(turma, new AtividadeAberta(), LocalDateTime.now().plusDays(1));
+        submeterComSucesso(outraAtividade.getId(), estudante.getId());
+
+        driver.perform(get(uriSubmissao(atividade.getId())).param("estudanteId", estudante.getId().toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(segunda.getId()))
+                .andExpect(jsonPath("$[0].versao").value(2))
+                .andExpect(jsonPath("$[0].status").value("EMFILA"))
+                .andExpect(jsonPath("$[1].id").value(primeira.getId()));
+    }
+
+    @Test
+    @DisplayName("Consulta sem submissões retorna lista vazia")
+    void testListarSubmissoesVazias() throws Exception {
+        driver.perform(get(uriSubmissao(atividade.getId())).param("estudanteId", estudante.getId().toString()))
+                .andExpect(status().isOk())
+                .andExpect(content().json("[]"));
+    }
+
+    @Test
+    @DisplayName("Consulta retorna o estado persistido sem alterar fila ou histórico, inclusive com atividade concluída")
+    void testConsultarEstadoAtual() throws Exception {
+        var resposta = submeterComSucesso(atividade.getId(), estudante.getId());
+        var submissao = submissaoRepository.findById(resposta.getId()).orElseThrow();
+        submissao.setEstadoSubimissao(new Processando());
+        submissaoRepository.saveAndFlush(submissao);
+        atividade.concluir();
+        atividadeRepository.saveAndFlush(atividade);
+        entityManager.clear();
+        long registros = historicoRepository.count();
+
+        driver.perform(get(uriSubmissao(atividade.getId()) + "/" + resposta.getId())
+                        .param("estudanteId", estudante.getId().toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(resposta.getId()))
+                .andExpect(jsonPath("$.estudante_id").value(estudante.getId()))
+                .andExpect(jsonPath("$.atividade_id").value(atividade.getId()))
+                .andExpect(jsonPath("$.status").value("PROCESSANDO"));
+
+        assertEquals(registros, historicoRepository.count());
+        verify(fila).adicionar(resposta.getId());
+    }
+
+    @Test
+    @DisplayName("Consulta não retorna submissão de outro estudante")
+    void testConsultarSubmissaoDeOutroEstudante() throws Exception {
+        var submissao = submeterComSucesso(atividade.getId(), estudante.getId());
+        Estudante outro = salvarEstudante();
+        driver.perform(get(uriSubmissao(atividade.getId()) + "/" + submissao.getId())
+                        .param("estudanteId", outro.getId().toString()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Submissão não encontrada"));
+    }
+
+    @Test
+    @DisplayName("Consulta não retorna submissão de outra atividade")
+    void testConsultarSubmissaoDeOutraAtividade() throws Exception {
+        var submissao = submeterComSucesso(atividade.getId(), estudante.getId());
+        Atividade outra = salvarAtividade(turma, new AtividadeAberta(), LocalDateTime.now().plusDays(1));
+        driver.perform(get(uriSubmissao(outra.getId()) + "/" + submissao.getId())
+                        .param("estudanteId", estudante.getId().toString()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Submissão não encontrada"));
+    }
+
+    @Test
+    @DisplayName("Consulta de submissão inexistente retorna 404")
+    void testConsultarSubmissaoInexistente() throws Exception {
+        driver.perform(get(uriSubmissao(atividade.getId()) + "/999")
+                        .param("estudanteId", estudante.getId().toString()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Submissão não encontrada"));
+    }
+
+    @Test
+    @DisplayName("Listagem e consulta validam a existência da atividade e do estudante")
+    void testConsultasComRecursosInexistentes() throws Exception {
+        for (String sufixo : List.of("", "/999")) {
+            driver.perform(get(uriSubmissao(999L) + sufixo)
+                            .param("estudanteId", estudante.getId().toString()))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.detail").value("Atividade não encontrada"));
+            driver.perform(get(uriSubmissao(atividade.getId()) + sufixo).param("estudanteId", "999"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.detail").value("Estudante não encontrado"));
+        }
+    }
+
+    @Test
+    @DisplayName("Listagem e consulta exigem identificação do estudante")
+    void testConsultasSemEstudante() throws Exception {
+        for (String sufixo : List.of("", "/999")) {
+            driver.perform(get(uriSubmissao(atividade.getId()) + sufixo))
+                    .andExpect(status().isBadRequest());
+        }
     }
 
     @Test
