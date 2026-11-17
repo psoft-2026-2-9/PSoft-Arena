@@ -1,8 +1,8 @@
 package br.edu.ufcg.psoftarena;
 
 import br.edu.ufcg.psoftarena.Model.Atividade;
-import br.edu.ufcg.psoftarena.Model.State.AtividadeAberta;
-import br.edu.ufcg.psoftarena.Model.State.AtividadeConcluida;
+import br.edu.ufcg.psoftarena.Model.State.Atividade.AtividadeAberta;
+import br.edu.ufcg.psoftarena.Model.State.Atividade.AtividadeConcluida;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

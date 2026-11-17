@@ -3,7 +3,6 @@ package br.edu.ufcg.psoftarena;
 import br.edu.ufcg.psoftarena.DTO.SubmissaoPostDto;
 import br.edu.ufcg.psoftarena.DTO.SubmissaoResponseDto;
 import br.edu.ufcg.psoftarena.ENUM.StatusProblema;
-import br.edu.ufcg.psoftarena.ENUM.StatusSubmissao;
 import br.edu.ufcg.psoftarena.ENUM.StatusTurma;
 import br.edu.ufcg.psoftarena.ENUM.TipoEstrategia;
 import br.edu.ufcg.psoftarena.Model.Atividade;
@@ -11,9 +10,9 @@ import br.edu.ufcg.psoftarena.Model.Estudante;
 import br.edu.ufcg.psoftarena.Model.Estrategia;
 import br.edu.ufcg.psoftarena.Model.Problema;
 import br.edu.ufcg.psoftarena.Model.Professor;
-import br.edu.ufcg.psoftarena.Model.State.AtividadeAberta;
-import br.edu.ufcg.psoftarena.Model.State.AtividadeConcluida;
-import br.edu.ufcg.psoftarena.Model.State.EstadoAtividade;
+import br.edu.ufcg.psoftarena.Model.State.Atividade.AtividadeAberta;
+import br.edu.ufcg.psoftarena.Model.State.Atividade.AtividadeConcluida;
+import br.edu.ufcg.psoftarena.Model.State.Atividade.EstadoAtividade;
 import br.edu.ufcg.psoftarena.Model.Turma;
 import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
 import br.edu.ufcg.psoftarena.Repository.EstudanteRepository;
@@ -46,6 +45,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -209,7 +210,7 @@ public class SubmissaoControllerTests {
         assertEquals(estudante.getId(), resultado.getEstudanteId());
         assertEquals(atividade.getId(), resultado.getAtividadeId());
         assertEquals(1, resultado.getVersao());
-        assertEquals(StatusSubmissao.SUBMETIDA, resultado.getStatus());
+        assertEquals("SUBMETIDA", resultado.getStatus());
         assertNotNull(resultado.getDataHoraSubmissao());
         assertEquals(1, submissaoRepository.findAll().size());
     }
@@ -250,6 +251,9 @@ public class SubmissaoControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corpoSubmissao(estudante.getId(), CODIGO_FONTE)))
                 .andExpect(status().isConflict())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.detail").value("Atividade concluída não aceita novas submissões"))
                 .andDo(print());
 
         assertEquals(0, submissaoRepository.findAll().size());
@@ -277,6 +281,9 @@ public class SubmissaoControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corpoSubmissao(estudante.getId(), CODIGO_FONTE)))
                 .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.detail").value("Atividade não encontrada"))
                 .andDo(print());
     }
 

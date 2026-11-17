@@ -1,22 +1,11 @@
 package br.edu.ufcg.psoftarena.Model;
 
-import br.edu.ufcg.psoftarena.ENUM.StatusSubmissao;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import br.edu.ufcg.psoftarena.Model.State.Subimissao.EstadoSubimissao;
+import br.edu.ufcg.psoftarena.Model.State.Subimissao.EstadoSubimissaoConverter;
+import br.edu.ufcg.psoftarena.Model.State.Subimissao.Submetida;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -53,7 +42,17 @@ public class Submissao {
     @Column(nullable = false)
     private String codigoFonte;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = EstadoSubimissaoConverter.class)
     @Column(nullable = false)
-    private StatusSubmissao status;
+    @Builder.Default
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private EstadoSubimissao estadoSubimissao = new Submetida();
+
+    public void proximoEstado() {
+        estadoSubimissao.proximoEstado(this);
+    }
+
+    public void setEstadoSubmissao(EstadoSubimissao estadoSubmissao) { this.estadoSubimissao = estadoSubmissao; }
 }

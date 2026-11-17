@@ -1,8 +1,8 @@
 package br.edu.ufcg.psoftarena.Model;
 
-import br.edu.ufcg.psoftarena.Model.State.AtividadeAberta;
-import br.edu.ufcg.psoftarena.Model.State.EstadoAtividade;
-import br.edu.ufcg.psoftarena.Model.State.EstadoAtividadeConverter;
+import br.edu.ufcg.psoftarena.Model.State.Atividade.AtividadeAberta;
+import br.edu.ufcg.psoftarena.Model.State.Atividade.EstadoAtividade;
+import br.edu.ufcg.psoftarena.Model.State.Atividade.EstadoAtividadeConverter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
