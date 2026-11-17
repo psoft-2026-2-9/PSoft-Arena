@@ -6,7 +6,7 @@ public class Processando implements EstadoSubimissao{
 
     @Override
     public void proximoEstado(Submissao submissao) {
-        // implementar apos a US10
+        // TODO US10: definir a transição para Concluida ou Falha conforme o resultado da avaliação.
     }
 
     @Override

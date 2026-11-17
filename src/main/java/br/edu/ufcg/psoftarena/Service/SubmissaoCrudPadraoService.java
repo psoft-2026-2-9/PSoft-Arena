@@ -7,17 +7,17 @@ import br.edu.ufcg.psoftarena.Exception.RegraNegocioException;
 import br.edu.ufcg.psoftarena.Model.Atividade;
 import br.edu.ufcg.psoftarena.Model.Estudante;
 import br.edu.ufcg.psoftarena.Model.FilaSubmissoes;
+import br.edu.ufcg.psoftarena.Model.HistoricoEstadoSubmissao;
 import br.edu.ufcg.psoftarena.Model.Submissao;
 import br.edu.ufcg.psoftarena.Model.State.Subimissao.Submetida;
 import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
 import br.edu.ufcg.psoftarena.Repository.EstudanteRepository;
+import br.edu.ufcg.psoftarena.Repository.HistoricoEstadoSubmissaoRepository;
 import br.edu.ufcg.psoftarena.Repository.SubmissaoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 
@@ -26,6 +26,9 @@ public class SubmissaoCrudPadraoService implements SubmissaoCrudService {
 
     @Autowired
     SubmissaoRepository submissaoRepository;
+
+    @Autowired
+    HistoricoEstadoSubmissaoRepository historicoEstadoSubmissaoRepository;
 
     @Autowired
     AtividadeRepository atividadeRepository;
@@ -63,7 +66,9 @@ public class SubmissaoCrudPadraoService implements SubmissaoCrudService {
                 .codigoFonte(submissaoPostDto.getCodigoFonte())
                 .build();
 
-        return toResponse(salvarSubmissao(submissao));
+        submissao = salvarSubmissao(submissao);
+        registrarEstado(submissao, null, submissao.getDataHoraSubmissao());
+        return encaminharParaFila(submissao);
     }
 
     @Override
@@ -72,22 +77,52 @@ public class SubmissaoCrudPadraoService implements SubmissaoCrudService {
         Submissao submissao = submissaoRepository.findById(submissaoId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Submissão não encontrada"));
 
+        return encaminharParaFila(submissao);
+    }
+
+    private SubmissaoResponseDto encaminharParaFila(Submissao submissao) {
         if (!(submissao.getEstadoSubimissao() instanceof Submetida)) {
             throw new RegraNegocioException(
                     "Somente submissões no estado Submetida podem ser encaminhadas para a fila");
         }
 
-        submissao.proximoEstado();
-        submissaoRepository.saveAndFlush(submissao);
+        if (!avancarEstado(submissao)) {
+            return toResponse(submissao);
+        }
 
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                FilaSubmissoes.getInstance().adicionar(submissaoId);
-            }
-        });
+        FilaSubmissoes.getInstance().adicionar(submissao.getId());
 
         return toResponse(submissao);
+    }
+
+    private boolean avancarEstado(Submissao submissao) {
+        String estadoAnterior = submissao.getEstadoSubimissao().getCodigo();
+        submissao.proximoEstado();
+        if (estadoAnterior.equals(submissao.getEstadoSubimissao().getCodigo())) {
+            return false;
+        }
+
+        submissaoRepository.saveAndFlush(submissao);
+        registrarEstado(submissao, estadoAnterior, LocalDateTime.now());
+        return true;
+    }
+
+    private void registrarEstado(Submissao submissao, String estadoAnterior, LocalDateTime dataHora) {
+        String estadoNovo = submissao.getEstadoSubimissao().getCodigo();
+        historicoEstadoSubmissaoRepository.save(HistoricoEstadoSubmissao.builder()
+                .submissao(submissao)
+                .estadoAnterior(estadoAnterior)
+                .estadoNovo(estadoNovo)
+                .dataHora(dataHora)
+                .build());
+
+        String mudanca = estadoAnterior == null
+                ? "registrada no estado " + estadoNovo
+                : estadoAnterior + " -> " + estadoNovo;
+        String mensagem = "Notificação ao estudante " + submissao.getEstudante().getId()
+                + ": submissão " + submissao.getId() + " - " + mudanca;
+
+        System.out.println(mensagem);
     }
 
     private Submissao salvarSubmissao(Submissao submissao) {

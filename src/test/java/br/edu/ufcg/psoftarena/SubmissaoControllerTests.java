@@ -2,12 +2,14 @@ package br.edu.ufcg.psoftarena;
 
 import br.edu.ufcg.psoftarena.DTO.SubmissaoPostDto;
 import br.edu.ufcg.psoftarena.DTO.SubmissaoResponseDto;
+import br.edu.ufcg.psoftarena.Exception.RegraNegocioException;
 import br.edu.ufcg.psoftarena.ENUM.StatusProblema;
 import br.edu.ufcg.psoftarena.ENUM.StatusTurma;
 import br.edu.ufcg.psoftarena.ENUM.TipoEstrategia;
 import br.edu.ufcg.psoftarena.Model.Atividade;
 import br.edu.ufcg.psoftarena.Model.Estudante;
 import br.edu.ufcg.psoftarena.Model.Estrategia;
+import br.edu.ufcg.psoftarena.Model.FilaSubmissoes;
 import br.edu.ufcg.psoftarena.Model.Problema;
 import br.edu.ufcg.psoftarena.Model.Professor;
 import br.edu.ufcg.psoftarena.Model.State.Atividade.AtividadeAberta;
@@ -17,10 +19,13 @@ import br.edu.ufcg.psoftarena.Model.Turma;
 import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
 import br.edu.ufcg.psoftarena.Repository.EstudanteRepository;
 import br.edu.ufcg.psoftarena.Repository.EstrategiaRepository;
+import br.edu.ufcg.psoftarena.Repository.HistoricoEstadoSubmissaoRepository;
 import br.edu.ufcg.psoftarena.Repository.ProblemaRepository;
 import br.edu.ufcg.psoftarena.Repository.ProfessorRepository;
 import br.edu.ufcg.psoftarena.Repository.SubmissaoRepository;
 import br.edu.ufcg.psoftarena.Repository.TurmaRepository;
+import br.edu.ufcg.psoftarena.Service.SubmissaoCrudService;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,10 +33,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.mockito.MockedStatic;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.context.transaction.TestTransaction;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
@@ -39,8 +46,15 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -63,6 +77,15 @@ public class SubmissaoControllerTests {
 
     @Autowired
     SubmissaoRepository submissaoRepository;
+
+    @Autowired
+    HistoricoEstadoSubmissaoRepository historicoRepository;
+
+    @Autowired
+    SubmissaoCrudService submissaoService;
+
+    @Autowired
+    EntityManager entityManager;
 
     @Autowired
     AtividadeRepository atividadeRepository;
@@ -91,9 +114,14 @@ public class SubmissaoControllerTests {
     Turma turma;
     Estudante estudante;
     Atividade atividade;
+    FilaSubmissoes fila;
+    MockedStatic<FilaSubmissoes> singletonFila;
 
     @BeforeEach
     void setUp() {
+        fila = mock(FilaSubmissoes.class);
+        singletonFila = mockStatic(FilaSubmissoes.class);
+        singletonFila.when(FilaSubmissoes::getInstance).thenReturn(fila);
         professor = salvarProfessor();
         turma = salvarTurma(StatusTurma.ATIVA);
         estudante = salvarEstudante();
@@ -103,6 +131,8 @@ public class SubmissaoControllerTests {
 
     @AfterEach
     void tearDown() {
+        singletonFila.close();
+        historicoRepository.deleteAll();
         submissaoRepository.deleteAll();
         atividadeRepository.deleteAll();
         turmaRepository.deleteAll();
@@ -210,9 +240,22 @@ public class SubmissaoControllerTests {
         assertEquals(estudante.getId(), resultado.getEstudanteId());
         assertEquals(atividade.getId(), resultado.getAtividadeId());
         assertEquals(1, resultado.getVersao());
-        assertEquals("SUBMETIDA", resultado.getStatus());
+        assertEquals("EMFILA", resultado.getStatus());
+        verify(fila).adicionar(resultado.getId());
         assertNotNull(resultado.getDataHoraSubmissao());
         assertEquals(1, submissaoRepository.findAll().size());
+
+        entityManager.flush();
+        entityManager.clear();
+        var historico = historicoRepository.findBySubmissaoIdOrderByDataHoraAscIdAsc(resultado.getId());
+        assertEquals(2, historico.size());
+        assertNull(historico.getFirst().getEstadoAnterior());
+        assertEquals("SUBMETIDA", historico.getFirst().getEstadoNovo());
+        assertEquals("SUBMETIDA", historico.get(1).getEstadoAnterior());
+        assertEquals("EMFILA", historico.get(1).getEstadoNovo());
+        assertEquals(resultado.getId(), historico.getFirst().getSubmissao().getId());
+        assertEquals(submissaoRepository.findById(resultado.getId()).orElseThrow().getDataHoraSubmissao(),
+                historico.getFirst().getDataHora());
     }
 
     @Test
@@ -225,6 +268,50 @@ public class SubmissaoControllerTests {
         assertEquals(2, segunda.getVersao());
         assertNotEquals(primeira.getId(), segunda.getId());
         assertEquals(2, submissaoRepository.findAll().size());
+        assertEquals(2, historicoRepository.findBySubmissaoIdOrderByDataHoraAscIdAsc(primeira.getId()).size());
+        assertEquals(2, historicoRepository.findBySubmissaoIdOrderByDataHoraAscIdAsc(segunda.getId()).size());
+        verify(fila).adicionar(primeira.getId());
+        verify(fila).adicionar(segunda.getId());
+    }
+
+    @Test
+    @DisplayName("Encaminhamento persiste histórico em ordem e rejeita repetição sem novo registro")
+    void testQuandoEncaminhamosRegistraMudancaDeEstado() throws Exception {
+        SubmissaoResponseDto submissao = submeterComSucesso(atividade.getId(), estudante.getId());
+
+        entityManager.flush();
+        entityManager.clear();
+
+        var historico = historicoRepository.findBySubmissaoIdOrderByDataHoraAscIdAsc(submissao.getId());
+        assertEquals(2, historico.size());
+        assertEquals("SUBMETIDA", historico.get(0).getEstadoNovo());
+        assertEquals("SUBMETIDA", historico.get(1).getEstadoAnterior());
+        assertEquals("EMFILA", historico.get(1).getEstadoNovo());
+        assertFalse(historico.get(1).getDataHora().isBefore(historico.get(0).getDataHora()));
+        assertEquals("EMFILA", submissaoRepository.findById(submissao.getId()).orElseThrow()
+                .getEstadoSubimissao().getCodigo());
+
+        assertThrows(RegraNegocioException.class,
+                () -> submissaoService.encaminharParaFila(submissao.getId()));
+        assertEquals(2, historicoRepository.findBySubmissaoIdOrderByDataHoraAscIdAsc(submissao.getId()).size());
+        verify(fila).adicionar(submissao.getId());
+    }
+
+    @Test
+    @DisplayName("Rollback da criação desfaz a submissão e seu histórico")
+    void testQuandoCriacaoDesfeitaNaoPersisteHistorico() throws Exception {
+        SubmissaoResponseDto submissao = submeterComSucesso(atividade.getId(), estudante.getId());
+        entityManager.flush();
+        var historico = historicoRepository.findBySubmissaoIdOrderByDataHoraAscIdAsc(submissao.getId());
+        assertEquals(2, historico.size());
+        var historicoIds = historico.stream().map(registro -> registro.getId()).toList();
+
+        TestTransaction.flagForRollback();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        assertTrue(submissaoRepository.findById(submissao.getId()).isEmpty());
+        assertTrue(historicoRepository.findAllById(historicoIds).isEmpty());
     }
 
     @Test
@@ -239,6 +326,7 @@ public class SubmissaoControllerTests {
                 .andDo(print());
 
         assertEquals(0, submissaoRepository.findAll().size());
+        assertEquals(0, historicoRepository.count());
     }
 
     @Test
