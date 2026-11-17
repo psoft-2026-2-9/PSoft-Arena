@@ -1,6 +1,5 @@
 package br.edu.ufcg.psoftarena;
 
-import br.edu.ufcg.psoftarena.ENUM.StatusAtividade;
 import br.edu.ufcg.psoftarena.ENUM.StatusProblema;
 import br.edu.ufcg.psoftarena.ENUM.StatusTurma;
 import br.edu.ufcg.psoftarena.ENUM.TipoEstrategia;
@@ -8,6 +7,9 @@ import br.edu.ufcg.psoftarena.Model.Atividade;
 import br.edu.ufcg.psoftarena.Model.Estrategia;
 import br.edu.ufcg.psoftarena.Model.Problema;
 import br.edu.ufcg.psoftarena.Model.Professor;
+import br.edu.ufcg.psoftarena.Model.State.AtividadeAberta;
+import br.edu.ufcg.psoftarena.Model.State.AtividadeConcluida;
+import br.edu.ufcg.psoftarena.Model.State.EstadoAtividade;
 import br.edu.ufcg.psoftarena.Model.Turma;
 import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
 import br.edu.ufcg.psoftarena.Repository.EstrategiaRepository;
@@ -99,12 +101,12 @@ public class AtividadeControllerTests {
                 .build());
     }
 
-    Atividade salvarAtividade(Turma turma, Problema problema, Estrategia estrategia, StatusAtividade status) {
+    Atividade salvarAtividade(Turma turma, Problema problema, Estrategia estrategia, EstadoAtividade estado) {
         return atividadeRepository.save(Atividade.builder()
                 .titulo("Atividade 1")
                 .descricao("Implemente o problema X")
                 .prazo(LocalDateTime.now().plusDays(7))
-                .status(status)
+                .status(estado)
                 .turma(turma)
                 .problema(problema)
                 .estrategia(estrategia)
@@ -279,7 +281,7 @@ public class AtividadeControllerTests {
         Turma turma = salvarTurma(professor, StatusTurma.ATIVA);
         Problema problema = salvarProblema(StatusProblema.ATIVO);
         Estrategia estrategia = salvarEstrategia();
-        Atividade atividade = salvarAtividade(turma, problema, estrategia, StatusAtividade.ABERTA);
+        Atividade atividade = salvarAtividade(turma, problema, estrategia, new AtividadeAberta());
 
         driver.perform(put(URI_ATIVIDADE + "/" + atividade.getId() + "/concluir")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -288,8 +290,8 @@ public class AtividadeControllerTests {
                 .andExpect(jsonPath("$.status").value("CONCLUIDA"))
                 .andDo(print());
 
-        assertEquals(StatusAtividade.CONCLUIDA,
-                atividadeRepository.findById(atividade.getId()).orElseThrow().getStatus());
+        assertEquals("CONCLUIDA",
+                atividadeRepository.findById(atividade.getId()).orElseThrow().getStatus().getCodigo());
     }
 
     @Test
@@ -308,7 +310,7 @@ public class AtividadeControllerTests {
         Turma turma = salvarTurma(professor, StatusTurma.ATIVA);
         Problema problema = salvarProblema(StatusProblema.ATIVO);
         Estrategia estrategia = salvarEstrategia();
-        Atividade atividade = salvarAtividade(turma, problema, estrategia, StatusAtividade.CONCLUIDA);
+        Atividade atividade = salvarAtividade(turma, problema, estrategia, new AtividadeConcluida());
 
         driver.perform(put(URI_ATIVIDADE + "/" + atividade.getId() + "/concluir")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -323,7 +325,7 @@ public class AtividadeControllerTests {
         Turma turma = salvarTurma(professor, StatusTurma.ATIVA);
         Problema problema = salvarProblema(StatusProblema.ATIVO);
         Estrategia estrategia = salvarEstrategia();
-        Atividade atividade = salvarAtividade(turma, problema, estrategia, StatusAtividade.ABERTA);
+        Atividade atividade = salvarAtividade(turma, problema, estrategia, new AtividadeAberta());
 
         driver.perform(delete("/problemas/" + problema.getId())
                         .contentType(MediaType.APPLICATION_JSON))

@@ -1,7 +1,8 @@
 package br.edu.ufcg.psoftarena;
 
-import br.edu.ufcg.psoftarena.ENUM.StatusAtividade;
 import br.edu.ufcg.psoftarena.Model.Atividade;
+import br.edu.ufcg.psoftarena.Model.State.AtividadeAberta;
+import br.edu.ufcg.psoftarena.Model.State.AtividadeConcluida;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +17,7 @@ public class AtividadeStateTests {
     @DisplayName("Atividade aberta aceita submissão")
     void atividadeAbertaDeveAceitarSubmissao() {
         Atividade atividade = Atividade.builder()
-                .status(StatusAtividade.ABERTA)
+                .status(new AtividadeAberta())
                 .build();
 
         assertTrue(atividade.aceitaSubmissao());
@@ -26,7 +27,7 @@ public class AtividadeStateTests {
     @DisplayName("Atividade concluída não aceita submissão")
     void atividadeConcluidaNaoDeveAceitarSubmissao() {
         Atividade atividade = Atividade.builder()
-                .status(StatusAtividade.CONCLUIDA)
+                .status(new AtividadeConcluida())
                 .build();
 
         assertFalse(atividade.aceitaSubmissao());
@@ -36,11 +37,11 @@ public class AtividadeStateTests {
     @DisplayName("Conclui atividade aberta")
     void deveConcluirAtividadeAberta() {
         Atividade atividade = Atividade.builder()
-                .status(StatusAtividade.ABERTA)
+                .status(new AtividadeAberta())
                 .build();
 
         assertTrue(atividade.concluir());
-        assertEquals(StatusAtividade.CONCLUIDA, atividade.getStatus());
+        assertEquals("CONCLUIDA", atividade.getStatus().getCodigo());
         assertFalse(atividade.aceitaSubmissao());
     }
 
@@ -48,10 +49,10 @@ public class AtividadeStateTests {
     @DisplayName("Não conclui atividade já concluída")
     void naoDeveConcluirAtividadeConcluida() {
         Atividade atividade = Atividade.builder()
-                .status(StatusAtividade.CONCLUIDA)
+                .status(new AtividadeConcluida())
                 .build();
 
         assertFalse(atividade.concluir());
-        assertEquals(StatusAtividade.CONCLUIDA, atividade.getStatus());
+        assertEquals("CONCLUIDA", atividade.getStatus().getCodigo());
     }
 }

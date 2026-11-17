@@ -2,7 +2,6 @@ package br.edu.ufcg.psoftarena;
 
 import br.edu.ufcg.psoftarena.DTO.SubmissaoPostDto;
 import br.edu.ufcg.psoftarena.DTO.SubmissaoResponseDto;
-import br.edu.ufcg.psoftarena.ENUM.StatusAtividade;
 import br.edu.ufcg.psoftarena.ENUM.StatusProblema;
 import br.edu.ufcg.psoftarena.ENUM.StatusSubmissao;
 import br.edu.ufcg.psoftarena.ENUM.StatusTurma;
@@ -12,6 +11,9 @@ import br.edu.ufcg.psoftarena.Model.Estudante;
 import br.edu.ufcg.psoftarena.Model.Estrategia;
 import br.edu.ufcg.psoftarena.Model.Problema;
 import br.edu.ufcg.psoftarena.Model.Professor;
+import br.edu.ufcg.psoftarena.Model.State.AtividadeAberta;
+import br.edu.ufcg.psoftarena.Model.State.AtividadeConcluida;
+import br.edu.ufcg.psoftarena.Model.State.EstadoAtividade;
 import br.edu.ufcg.psoftarena.Model.Turma;
 import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
 import br.edu.ufcg.psoftarena.Repository.EstudanteRepository;
@@ -95,7 +97,7 @@ public class SubmissaoControllerTests {
         turma = salvarTurma(StatusTurma.ATIVA);
         estudante = salvarEstudante();
         matricularEstudanteNaTurma(estudante);
-        atividade = salvarAtividade(turma, StatusAtividade.ABERTA, LocalDateTime.now().plusDays(7));
+        atividade = salvarAtividade(turma, new AtividadeAberta(), LocalDateTime.now().plusDays(7));
     }
 
     @AfterEach
@@ -156,12 +158,12 @@ public class SubmissaoControllerTests {
                 .build());
     }
 
-    Atividade salvarAtividade(Turma turmaDaAtividade, StatusAtividade status, LocalDateTime prazo) {
+    Atividade salvarAtividade(Turma turmaDaAtividade, EstadoAtividade estado, LocalDateTime prazo) {
         return atividadeRepository.save(Atividade.builder()
                 .titulo("Atividade 1")
                 .descricao("Implemente o problema X")
                 .prazo(prazo)
-                .status(status)
+                .status(estado)
                 .turma(turmaDaAtividade)
                 .problema(salvarProblema(StatusProblema.ATIVO))
                 .estrategia(salvarEstrategia())
@@ -241,7 +243,7 @@ public class SubmissaoControllerTests {
     @Test
     @DisplayName("Atividade concluída não aceita submissões")
     void testQuandoAtividadeConcluida() throws Exception {
-        Atividade atividadeConcluida = salvarAtividade(turma, StatusAtividade.CONCLUIDA,
+        Atividade atividadeConcluida = salvarAtividade(turma, new AtividadeConcluida(),
                 LocalDateTime.now().plusDays(7));
 
         driver.perform(post(uriSubmissao(atividadeConcluida.getId()))
@@ -256,7 +258,7 @@ public class SubmissaoControllerTests {
     @Test
     @DisplayName("Prazo expirado não aceita submissões")
     void testQuandoPrazoExpirado() throws Exception {
-        Atividade atividadeAtrasada = salvarAtividade(turma, StatusAtividade.ABERTA,
+        Atividade atividadeAtrasada = salvarAtividade(turma, new AtividadeAberta(),
                 LocalDateTime.now().minusDays(1));
 
         driver.perform(post(uriSubmissao(atividadeAtrasada.getId()))

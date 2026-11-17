@@ -1,25 +1,24 @@
 package br.edu.ufcg.psoftarena.Model;
 
-import br.edu.ufcg.psoftarena.ENUM.StatusAtividade;
 import br.edu.ufcg.psoftarena.Model.State.AtividadeAberta;
-import br.edu.ufcg.psoftarena.Model.State.AtividadeConcluida;
 import br.edu.ufcg.psoftarena.Model.State.EstadoAtividade;
+import br.edu.ufcg.psoftarena.Model.State.EstadoAtividadeConverter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
@@ -44,13 +43,13 @@ public class Atividade {
     @Column(nullable = false)
     private LocalDateTime prazo;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = EstadoAtividadeConverter.class)
     @Column(nullable = false)
-    private StatusAtividade status;
-
-    @Transient
+    @Builder.Default
     @JsonIgnore
-    private EstadoAtividade estado;
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private EstadoAtividade status = new AtividadeAberta();
 
     @ManyToOne
     @JoinColumn(name = "turma_id", nullable = false)
@@ -76,25 +75,21 @@ public class Atividade {
                                              // poderiamos so guardar ela e nunca expor no dto
 
     public boolean aceitaSubmissao() {
-        return estadoAtual().aceitaSubmissao();
+        return statusAtual().aceitaSubmissao();
     }
 
     public boolean concluir() {
-        return estadoAtual().concluir(this);
+        return statusAtual().concluir(this);
     }
 
     public void mudarEstado(EstadoAtividade novoEstado) {
-        this.estado = novoEstado;
-        this.status = novoEstado.getStatus();
+        this.status = novoEstado;
     }
 
-    private EstadoAtividade estadoAtual() {
-        if (estado == null) {
-            estado = switch (status) {
-                case ABERTA -> new AtividadeAberta();
-                case CONCLUIDA -> new AtividadeConcluida();
-            };
+    private EstadoAtividade statusAtual() {
+        if (status == null) {
+            status = new AtividadeAberta();
         }
-        return estado;
+        return status;
     }
 }

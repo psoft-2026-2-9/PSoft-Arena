@@ -1,6 +1,5 @@
 package br.edu.ufcg.psoftarena.Model.State;
 
-import br.edu.ufcg.psoftarena.ENUM.StatusAtividade;
 import br.edu.ufcg.psoftarena.Model.Atividade;
 
 public class AtividadeConcluida implements EstadoAtividade {
@@ -16,7 +15,7 @@ public class AtividadeConcluida implements EstadoAtividade {
     }
 
     @Override
-    public StatusAtividade getStatus() {
-        return StatusAtividade.CONCLUIDA;
+    public String getCodigo() {
+        return "CONCLUIDA";
     }
 }

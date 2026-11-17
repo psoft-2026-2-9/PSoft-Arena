@@ -1,6 +1,5 @@
 package br.edu.ufcg.psoftarena;
 
-import br.edu.ufcg.psoftarena.ENUM.StatusAtividade;
 import br.edu.ufcg.psoftarena.ENUM.StatusProblema;
 import br.edu.ufcg.psoftarena.ENUM.StatusTurma;
 import br.edu.ufcg.psoftarena.ENUM.TipoEstrategia;
@@ -9,6 +8,9 @@ import br.edu.ufcg.psoftarena.Model.Estrategia;
 import br.edu.ufcg.psoftarena.Model.Estudante;
 import br.edu.ufcg.psoftarena.Model.Problema;
 import br.edu.ufcg.psoftarena.Model.Professor;
+import br.edu.ufcg.psoftarena.Model.State.AtividadeAberta;
+import br.edu.ufcg.psoftarena.Model.State.AtividadeConcluida;
+import br.edu.ufcg.psoftarena.Model.State.EstadoAtividade;
 import br.edu.ufcg.psoftarena.Model.Turma;
 import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
 import br.edu.ufcg.psoftarena.Repository.EstrategiaRepository;
@@ -107,12 +109,12 @@ public class AtividadeConsultaControllerTests {
     }
 
     Atividade salvarAtividade(Turma turma, Problema problema, Estrategia estrategia,
-                              String titulo, StatusAtividade status) {
+                              String titulo, EstadoAtividade estado) {
         return atividadeRepository.save(Atividade.builder()
                 .titulo(titulo)
                 .descricao("Descrição da " + titulo)
                 .prazo(LocalDateTime.now().plusDays(7))
-                .status(status)
+                .status(estado)
                 .turma(turma)
                 .problema(problema)
                 .estrategia(estrategia)
@@ -147,9 +149,9 @@ public class AtividadeConsultaControllerTests {
         Problema problema = salvarProblema("Arena");
         Estrategia estrategia = salvarEstrategia("Code Smells Básico");
 
-        salvarAtividade(turmaA, problema, estrategia, "Atividade A", StatusAtividade.ABERTA);
-        salvarAtividade(turmaB, problema, estrategia, "Atividade B", StatusAtividade.ABERTA);
-        salvarAtividade(turmaC, problema, estrategia, "Atividade C", StatusAtividade.ABERTA);
+        salvarAtividade(turmaA, problema, estrategia, "Atividade A", new AtividadeAberta());
+        salvarAtividade(turmaB, problema, estrategia, "Atividade B", new AtividadeAberta());
+        salvarAtividade(turmaC, problema, estrategia, "Atividade C", new AtividadeAberta());
 
         driver.perform(get(URI_ATIVIDADE + "/estudante/" + estudante.getId()))
                 .andExpect(status().isOk())
@@ -169,7 +171,7 @@ public class AtividadeConsultaControllerTests {
 
         Problema problema = salvarProblema("Arena");
         Estrategia estrategia = salvarEstrategia("Code Smells Básico");
-        salvarAtividade(turma, problema, estrategia, "Atividade A", StatusAtividade.ABERTA);
+        salvarAtividade(turma, problema, estrategia, "Atividade A", new AtividadeAberta());
 
         driver.perform(get(URI_ATIVIDADE + "/estudante/" + estudante.getId()))
                 .andExpect(status().isOk())
@@ -195,7 +197,7 @@ public class AtividadeConsultaControllerTests {
 
         Problema problema = salvarProblema("Arena");
         Estrategia estrategia = salvarEstrategia("Code Smells Básico");
-        Atividade atividade = salvarAtividade(turma, problema, estrategia, "Atividade 1", StatusAtividade.ABERTA);
+        Atividade atividade = salvarAtividade(turma, problema, estrategia, "Atividade 1", new AtividadeAberta());
 
         driver.perform(get(URI_ATIVIDADE + "/" + atividade.getId() + "/estudante/" + estudante.getId()))
                 .andExpect(status().isOk())
@@ -242,7 +244,7 @@ public class AtividadeConsultaControllerTests {
         Turma turma = salvarTurma("Turma A", "TURMA-A", StatusTurma.ATIVA, professor);
         Problema problema = salvarProblema("Arena");
         Estrategia estrategia = salvarEstrategia("Code Smells Básico");
-        Atividade atividade = salvarAtividade(turma, problema, estrategia, "Atividade 1", StatusAtividade.ABERTA);
+        Atividade atividade = salvarAtividade(turma, problema, estrategia, "Atividade 1", new AtividadeAberta());
 
         driver.perform(get(URI_ATIVIDADE + "/" + atividade.getId() + "/estudante/999"))
                 .andExpect(status().isNotFound())
@@ -260,7 +262,7 @@ public class AtividadeConsultaControllerTests {
 
         Problema problema = salvarProblema("Arena");
         Estrategia estrategia = salvarEstrategia("Code Smells Básico");
-        Atividade atividade = salvarAtividade(turmaA, problema, estrategia, "Atividade A", StatusAtividade.ABERTA);
+        Atividade atividade = salvarAtividade(turmaA, problema, estrategia, "Atividade A", new AtividadeAberta());
 
         driver.perform(get(URI_ATIVIDADE + "/" + atividade.getId() + "/estudante/" + estudante.getId()))
                 .andExpect(status().isForbidden())
@@ -278,7 +280,7 @@ public class AtividadeConsultaControllerTests {
         Problema problema = salvarProblema("Arena");
         Estrategia estrategia = salvarEstrategia("Code Smells Básico");
         Atividade atividade = salvarAtividade(turma, problema, estrategia, "Atividade Concluída",
-                StatusAtividade.CONCLUIDA);
+                new AtividadeConcluida());
 
         driver.perform(get(URI_ATIVIDADE + "/estudante/" + estudante.getId()))
                 .andExpect(status().isOk())
@@ -305,7 +307,7 @@ public class AtividadeConsultaControllerTests {
         Problema problema = salvarProblema("Arena");
         Estrategia estrategia = salvarEstrategia("Code Smells Básico");
         Atividade atividade = salvarAtividade(turma, problema, estrategia, "Atividade Encerrada",
-                StatusAtividade.ABERTA);
+                new AtividadeAberta());
 
         driver.perform(get(URI_ATIVIDADE + "/estudante/" + estudante.getId()))
                 .andExpect(status().isOk())
@@ -330,7 +332,7 @@ public class AtividadeConsultaControllerTests {
 
         Problema problema = salvarProblema("Arena");
         Estrategia estrategia = salvarEstrategia("Code Smells Básico");
-        Atividade atividade = salvarAtividade(turma, problema, estrategia, "Atividade A", StatusAtividade.ABERTA);
+        Atividade atividade = salvarAtividade(turma, problema, estrategia, "Atividade A", new AtividadeAberta());
 
         removerEstudante(turma, estudante);
 
