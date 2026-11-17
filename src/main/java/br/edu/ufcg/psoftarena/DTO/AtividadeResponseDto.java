@@ -1,6 +1,5 @@
 package br.edu.ufcg.psoftarena.DTO;
 
-import br.edu.ufcg.psoftarena.ENUM.StatusAtividade;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,7 +27,7 @@ public class AtividadeResponseDto {
     private LocalDateTime prazo;
 
     @JsonProperty("status")
-    private StatusAtividade status;
+    private String status;
 
     @JsonProperty("turma_id")
     private Long turmaId;

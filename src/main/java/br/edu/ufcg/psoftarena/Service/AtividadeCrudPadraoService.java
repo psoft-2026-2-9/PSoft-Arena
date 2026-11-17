@@ -2,12 +2,12 @@ package br.edu.ufcg.psoftarena.Service;
 
 import br.edu.ufcg.psoftarena.DTO.AtividadePostDto;
 import br.edu.ufcg.psoftarena.DTO.AtividadeResponseDto;
-import br.edu.ufcg.psoftarena.ENUM.StatusAtividade;
 import br.edu.ufcg.psoftarena.ENUM.StatusProblema;
 import br.edu.ufcg.psoftarena.ENUM.StatusTurma;
 import br.edu.ufcg.psoftarena.Model.Atividade;
 import br.edu.ufcg.psoftarena.Model.Estrategia;
 import br.edu.ufcg.psoftarena.Model.Problema;
+import br.edu.ufcg.psoftarena.Model.State.AtividadeAberta;
 import br.edu.ufcg.psoftarena.Model.Turma;
 import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
 import br.edu.ufcg.psoftarena.Repository.EstrategiaRepository;
@@ -69,7 +69,7 @@ public class AtividadeCrudPadraoService implements AtividadeCrudService {
                 .titulo(atividadePostDto.getTitulo())
                 .descricao(atividadePostDto.getDescricao())
                 .prazo(atividadePostDto.getPrazo())
-                .status(StatusAtividade.ABERTA)
+                .status(new AtividadeAberta())
                 .turma(turma)
                 .problema(problema)
                 .estrategia(estrategia)
@@ -151,7 +151,7 @@ public class AtividadeCrudPadraoService implements AtividadeCrudService {
                 .titulo(atividade.getTitulo())
                 .descricao(atividade.getDescricao())
                 .prazo(atividade.getPrazo())
-                .status(atividade.getStatus())
+                .status(atividade.getStatus().getCodigo())
                 .turmaId(atividade.getTurma().getId())
                 .problemaId(atividade.getProblema().getId())
                 .estrategiaId(atividade.getEstrategia().getId())
@@ -169,7 +169,7 @@ public class AtividadeCrudPadraoService implements AtividadeCrudService {
                 .descricao(atividade.getDescricao())
                 .estrategiaAvaliacao(toEstrategiaResumo(atividade.getEstrategia()))
                 .prazo(atividade.getPrazo())
-                .status(atividade.getStatus())
+                .status(atividade.getStatus().getCodigo())
                 .build();
     }
 
