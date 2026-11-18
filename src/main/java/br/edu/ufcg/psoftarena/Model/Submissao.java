@@ -1,13 +1,14 @@
 package br.edu.ufcg.psoftarena.Model;
 
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.EstadoSubimissao;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.EstadoSubimissaoConverter;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.Submetida;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.EstadoSubmissao;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.EstadoSubmissaoConverter;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.Submetida;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Builder
@@ -26,10 +27,14 @@ public class Submissao {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "estudante_id", nullable = false)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Estudante estudante;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "atividade_id", nullable = false)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Atividade atividade;
 
     @Column(nullable = false)
@@ -40,23 +45,36 @@ public class Submissao {
 
     @Lob
     @Column(nullable = false)
+    @ToString.Exclude
     private String codigoFonte;
 
-    @Convert(converter = EstadoSubimissaoConverter.class)
+    @Convert(converter = EstadoSubmissaoConverter.class)
     @Column(nullable = false)
     @Builder.Default
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    private EstadoSubimissao estadoSubimissao = new Submetida();
+    @NonNull
+    @Setter(AccessLevel.NONE)
+    private EstadoSubmissao estadoSubmissao = new Submetida();
 
-    public void proximoEstado() {
-        estadoSubimissao.proximoEstado(this);
+    public boolean enfileirar() {
+        return estadoSubmissao.enfileirar(this);
     }
 
-    public void falhar() {
-        estadoSubimissao.falhar(this);
+    public boolean processar() {
+        return estadoSubmissao.processar(this);
     }
 
-    public void setEstadoSubmissao(EstadoSubimissao estadoSubmissao) { this.estadoSubimissao = estadoSubmissao; }
+    public boolean concluir() {
+        return estadoSubmissao.concluir(this);
+    }
+
+    public boolean falhar() {
+        return estadoSubmissao.falhar(this);
+    }
+
+    public void mudarEstado(EstadoSubmissao novoEstado) {
+        this.estadoSubmissao = Objects.requireNonNull(novoEstado, "Estado da submissão não pode ser nulo");
+    }
 }

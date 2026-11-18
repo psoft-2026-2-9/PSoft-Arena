@@ -16,9 +16,9 @@ import br.edu.ufcg.psoftarena.Model.Problema;
 import br.edu.ufcg.psoftarena.Model.Professor;
 import br.edu.ufcg.psoftarena.Model.ResultadoModelo;
 import br.edu.ufcg.psoftarena.Model.State.Atividade.AtividadeAberta;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.EmFila;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.EstadoSubimissao;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.Processando;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.EmFila;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.EstadoSubmissao;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.Processando;
 import br.edu.ufcg.psoftarena.Model.Submissao;
 import br.edu.ufcg.psoftarena.Model.Turma;
 import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
@@ -176,19 +176,19 @@ public class AvaliacaoServiceTests {
         professorRepository.deleteAll();
     }
 
-    Submissao salvarSubmissao(EstadoSubimissao estado) {
+    Submissao salvarSubmissao(EstadoSubmissao estado) {
         return submissaoRepository.save(Submissao.builder()
                 .estudante(estudante)
                 .atividade(atividade)
                 .versao(1)
                 .dataHoraSubmissao(LocalDateTime.now())
                 .codigoFonte(CODIGO_FONTE)
-                .estadoSubimissao(estado)
+                .estadoSubmissao(estado)
                 .build());
     }
 
     String estadoAtual(Long submissaoId) {
-        return submissaoRepository.findById(submissaoId).orElseThrow().getEstadoSubimissao().getCodigo();
+        return submissaoRepository.findById(submissaoId).orElseThrow().getEstadoSubmissao().getCodigo();
     }
 
     List<String> transicoes(Long submissaoId) {

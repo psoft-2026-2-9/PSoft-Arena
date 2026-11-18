@@ -1,7 +1,7 @@
 package br.edu.ufcg.psoftarena.Service;
 
 import br.edu.ufcg.psoftarena.Model.FilaSubmissoes;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.EmFila;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.EmFila;
 import br.edu.ufcg.psoftarena.Model.Submissao;
 import br.edu.ufcg.psoftarena.Repository.SubmissaoRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -62,9 +62,9 @@ class ConsumidorFilaSubmissoesTests {
     @Test
     @DisplayName("Ao iniciar, submissões que estavam em fila voltam para a fila")
     void deveReenfileirarSubmissoesPendentesAoIniciar() {
-        when(consumidor.submissaoRepository.findAllByEstadoSubimissao(any())).thenReturn(List.of(
-                Submissao.builder().id(7L).estadoSubimissao(new EmFila()).build(),
-                Submissao.builder().id(8L).estadoSubimissao(new EmFila()).build()));
+        when(consumidor.submissaoRepository.findAllByEstadoSubmissao(any())).thenReturn(List.of(
+                Submissao.builder().id(7L).estadoSubmissao(new EmFila()).build(),
+                Submissao.builder().id(8L).estadoSubmissao(new EmFila()).build()));
         FilaSubmissoes fila = mock(FilaSubmissoes.class);
 
         try (MockedStatic<FilaSubmissoes> singleton = mockStatic(FilaSubmissoes.class)) {

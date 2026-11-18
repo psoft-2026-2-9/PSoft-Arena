@@ -1,14 +1,16 @@
 package br.edu.ufcg.psoftarena.Service;
 
 import br.edu.ufcg.psoftarena.Model.FilaSubmissoes;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.EmFila;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.EmFila;
 import br.edu.ufcg.psoftarena.Repository.SubmissaoRepository;
 import jakarta.annotation.PreDestroy;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class ConsumidorFilaSubmissoes {
 
@@ -22,7 +24,7 @@ public class ConsumidorFilaSubmissoes {
 
     @EventListener(ApplicationReadyEvent.class)
     public void iniciar() {
-        submissaoRepository.findAllByEstadoSubimissao(new EmFila())
+        submissaoRepository.findAllByEstadoSubmissao(new EmFila())
                 .forEach(submissao -> FilaSubmissoes.getInstance().adicionar(submissao.getId()));
 
         consumidor = new Thread(this::consumir, "consumidor-fila-submissoes");
@@ -41,7 +43,7 @@ public class ConsumidorFilaSubmissoes {
         try {
             avaliacaoService.avaliarSubmissao(submissaoId);
         } catch (RuntimeException e) {
-            System.out.println("Erro ao processar a submissão " + submissaoId + ": " + e.getMessage());
+            log.error("Erro ao processar a submissão {}: {}", submissaoId, e.getMessage(), e);
         }
     }
 
