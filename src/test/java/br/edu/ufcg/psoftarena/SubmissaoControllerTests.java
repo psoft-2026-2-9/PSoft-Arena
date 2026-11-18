@@ -289,7 +289,10 @@ public class SubmissaoControllerTests {
         for (String sufixo : List.of("", "/" + submissao.getId())) {
             driver.perform(get(uriSubmissao(atividade.getId()) + sufixo)
                             .param("estudanteId", outro.getId().toString()))
-                    .andExpect(status().isConflict());
+                    .andExpect(status().isForbidden())
+                    .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                    .andExpect(jsonPath("$.status").value(403))
+                    .andExpect(jsonPath("$.detail").value("Estudante não pertence à turma"));
         }
     }
 
@@ -304,7 +307,10 @@ public class SubmissaoControllerTests {
         for (String sufixo : List.of("", "/" + submissao.getId())) {
             driver.perform(get(uriSubmissao(atividade.getId()) + sufixo)
                             .param("estudanteId", estudante.getId().toString()))
-                    .andExpect(status().isConflict());
+                    .andExpect(status().isForbidden())
+                    .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                    .andExpect(jsonPath("$.status").value(403))
+                    .andExpect(jsonPath("$.detail").value("Estudante não pertence à turma"));
         }
     }
 
@@ -445,7 +451,10 @@ public class SubmissaoControllerTests {
         driver.perform(post(uriSubmissao(atividade.getId()))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corpoSubmissao(estudanteFora.getId(), CODIGO_FONTE)))
-                .andExpect(status().isConflict())
+                .andExpect(status().isForbidden())
+                    .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                    .andExpect(jsonPath("$.status").value(403))
+                    .andExpect(jsonPath("$.detail").value("Estudante não pertence à turma"))
                 .andDo(print());
 
         assertEquals(0, submissaoRepository.findAll().size());

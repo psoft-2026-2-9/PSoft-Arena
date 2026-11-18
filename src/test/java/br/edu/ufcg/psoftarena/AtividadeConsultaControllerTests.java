@@ -23,6 +23,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.test.web.servlet.MockMvc;
@@ -33,6 +34,7 @@ import java.util.List;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -266,6 +268,9 @@ public class AtividadeConsultaControllerTests {
 
         driver.perform(get(URI_ATIVIDADE + "/" + atividade.getId() + "/estudante/" + estudante.getId()))
                 .andExpect(status().isForbidden())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.detail").value("Estudante não pertence à turma"))
                 .andDo(print());
     }
 
@@ -343,6 +348,9 @@ public class AtividadeConsultaControllerTests {
 
         driver.perform(get(URI_ATIVIDADE + "/" + atividade.getId() + "/estudante/" + estudante.getId()))
                 .andExpect(status().isForbidden())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.detail").value("Estudante não pertence à turma"))
                 .andDo(print());
     }
 }

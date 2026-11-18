@@ -1,5 +1,9 @@
 package br.edu.ufcg.psoftarena.Service;
 
+import br.edu.ufcg.psoftarena.Exception.EstudanteNaoPertenceTurmaException;
+import br.edu.ufcg.psoftarena.Exception.RecursoNaoEncontradoException;
+import br.edu.ufcg.psoftarena.Exception.RegraNegocioException;
+
 import br.edu.ufcg.psoftarena.DTO.AtividadePostDto;
 import br.edu.ufcg.psoftarena.DTO.AtividadeResponseDto;
 import br.edu.ufcg.psoftarena.ENUM.StatusProblema;
@@ -14,11 +18,9 @@ import br.edu.ufcg.psoftarena.Repository.EstrategiaRepository;
 import br.edu.ufcg.psoftarena.Repository.ProblemaRepository;
 import br.edu.ufcg.psoftarena.Repository.TurmaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 import br.edu.ufcg.psoftarena.DTO.AtividadeConsultaResponseDto;
 import br.edu.ufcg.psoftarena.DTO.EstrategiaResumoDto;
 import br.edu.ufcg.psoftarena.DTO.ProblemaResponseDto;
@@ -53,14 +55,12 @@ public class AtividadeCrudPadraoService implements AtividadeCrudService {
     public AtividadeResponseDto criarAtividade(AtividadePostDto atividadePostDto) {
         Turma turma = getExistingTurma(atividadePostDto.getTurmaId());
         if (turma.getStatus() != StatusTurma.ATIVA) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Turma encerrada não pode receber novas atividades");
+            throw new RegraNegocioException("Turma encerrada não pode receber novas atividades");
         }
 
         Problema problema = getExistingProblema(atividadePostDto.getProblemaId());
         if (problema.getStatus() != StatusProblema.ATIVO) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Problema inativo não pode ser usado em atividades");
+            throw new RegraNegocioException("Problema inativo não pode ser usado em atividades");
         }
 
         Estrategia estrategia = getExistingEstrategia(atividadePostDto.getEstrategiaId());
@@ -86,7 +86,7 @@ public class AtividadeCrudPadraoService implements AtividadeCrudService {
     public AtividadeResponseDto concluirAtividade(Long id) {
         Atividade atividade = getExistingAtividade(id);
         if (!atividade.concluir()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Atividade já está concluída");
+            throw new RegraNegocioException("Atividade já está concluída");
         }
 
         return toResponse(atividadeRepository.save(atividade));
@@ -109,11 +109,10 @@ public class AtividadeCrudPadraoService implements AtividadeCrudService {
         validarEstudanteExiste(estudanteId);
 
         Atividade atividade = atividadeRepository.findByIdWithDetails(atividadeId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Atividade não encontrada"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Atividade não encontrada"));
 
         if (!turmaRepository.existsByIdAndEstudantes_Id(atividade.getTurma().getId(), estudanteId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Estudante não participa da turma desta atividade");
+            throw new EstudanteNaoPertenceTurmaException();
         }
 
         return toConsultaResponse(atividade);
@@ -121,27 +120,27 @@ public class AtividadeCrudPadraoService implements AtividadeCrudService {
 
     private Turma getExistingTurma(Long id) {
         return turmaRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Turma não encontrada"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Turma não encontrada"));
     }
 
     private Problema getExistingProblema(Long id) {
         return problemaRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Problema não encontrado"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Problema não encontrado"));
     }
 
     private Estrategia getExistingEstrategia(Long id) {
         return estrategiaRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Estratégia não encontrada"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Estratégia não encontrada"));
     }
 
     private Atividade getExistingAtividade(Long id) {
         return atividadeRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Atividade não encontrada"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Atividade não encontrada"));
     }
 
     private void validarEstudanteExiste(Long estudanteId) {
         if (!estudanteRepository.existsById(estudanteId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Estudante não encontrado");
+            throw new RecursoNaoEncontradoException("Estudante não encontrado");
         }
     }
 
