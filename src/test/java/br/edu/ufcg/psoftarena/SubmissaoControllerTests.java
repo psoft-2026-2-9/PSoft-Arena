@@ -8,7 +8,6 @@ import br.edu.ufcg.psoftarena.ENUM.TipoEstrategia;
 import br.edu.ufcg.psoftarena.Model.Atividade;
 import br.edu.ufcg.psoftarena.Model.Estudante;
 import br.edu.ufcg.psoftarena.Model.Estrategia;
-import br.edu.ufcg.psoftarena.Model.FilaSubmissoes;
 import br.edu.ufcg.psoftarena.Model.Problema;
 import br.edu.ufcg.psoftarena.Model.Professor;
 import br.edu.ufcg.psoftarena.Model.State.Atividade.AtividadeAberta;
@@ -24,6 +23,7 @@ import br.edu.ufcg.psoftarena.Repository.ProblemaRepository;
 import br.edu.ufcg.psoftarena.Repository.ProfessorRepository;
 import br.edu.ufcg.psoftarena.Repository.SubmissaoRepository;
 import br.edu.ufcg.psoftarena.Repository.TurmaRepository;
+import br.edu.ufcg.psoftarena.Service.EnfileiradorSubmissoes;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.AfterEach;
@@ -32,10 +32,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.mockito.MockedStatic;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.context.transaction.TestTransaction;
 import tools.jackson.databind.ObjectMapper;
@@ -50,8 +50,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -104,20 +102,18 @@ public class SubmissaoControllerTests {
     @Autowired
     TextEncryptor textEncryptor;
 
+    @MockitoBean
+    EnfileiradorSubmissoes enfileiradorSubmissoes;
+
     ObjectMapper objectMapper = new ObjectMapper();
 
     Professor professor;
     Turma turma;
     Estudante estudante;
     Atividade atividade;
-    FilaSubmissoes fila;
-    MockedStatic<FilaSubmissoes> singletonFila;
 
     @BeforeEach
     void setUp() {
-        fila = mock(FilaSubmissoes.class);
-        singletonFila = mockStatic(FilaSubmissoes.class);
-        singletonFila.when(FilaSubmissoes::getInstance).thenReturn(fila);
         professor = salvarProfessor();
         turma = salvarTurma(StatusTurma.ATIVA);
         estudante = salvarEstudante();
@@ -127,7 +123,6 @@ public class SubmissaoControllerTests {
 
     @AfterEach
     void tearDown() {
-        singletonFila.close();
         historicoRepository.deleteAll();
         submissaoRepository.deleteAll();
         atividadeRepository.deleteAll();
@@ -270,7 +265,7 @@ public class SubmissaoControllerTests {
                 .andExpect(jsonPath("$.status").value("PROCESSANDO"));
 
         assertEquals(registros, historicoRepository.count());
-        verify(fila).adicionar(resposta.getId());
+        verify(enfileiradorSubmissoes).enfileirarAposCommit(resposta.getId());
     }
 
     @Test
@@ -372,7 +367,7 @@ public class SubmissaoControllerTests {
         assertEquals(atividade.getId(), resultado.getAtividadeId());
         assertEquals(1, resultado.getVersao());
         assertEquals("EMFILA", resultado.getStatus());
-        verify(fila).adicionar(resultado.getId());
+        verify(enfileiradorSubmissoes).enfileirarAposCommit(resultado.getId());
         assertNotNull(resultado.getDataHoraSubmissao());
         assertEquals(1, submissaoRepository.findAll().size());
 
@@ -401,8 +396,8 @@ public class SubmissaoControllerTests {
         assertEquals(2, submissaoRepository.findAll().size());
         assertEquals(2, historicoRepository.findBySubmissaoIdOrderByDataHoraAscIdAsc(primeira.getId()).size());
         assertEquals(2, historicoRepository.findBySubmissaoIdOrderByDataHoraAscIdAsc(segunda.getId()).size());
-        verify(fila).adicionar(primeira.getId());
-        verify(fila).adicionar(segunda.getId());
+        verify(enfileiradorSubmissoes).enfileirarAposCommit(primeira.getId());
+        verify(enfileiradorSubmissoes).enfileirarAposCommit(segunda.getId());
     }
 
     @Test
@@ -422,7 +417,7 @@ public class SubmissaoControllerTests {
         assertEquals("EMFILA", submissaoRepository.findById(submissao.getId()).orElseThrow()
                 .getEstadoSubimissao().getCodigo());
 
-        verify(fila).adicionar(submissao.getId());
+        verify(enfileiradorSubmissoes).enfileirarAposCommit(submissao.getId());
     }
 
     @Test

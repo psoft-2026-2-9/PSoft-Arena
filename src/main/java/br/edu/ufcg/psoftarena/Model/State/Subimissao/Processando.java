@@ -6,7 +6,12 @@ public class Processando implements EstadoSubimissao{
 
     @Override
     public void proximoEstado(Submissao submissao) {
-        // TODO US10: definir a transição para Concluida ou Falha conforme o resultado da avaliação.
+        submissao.setEstadoSubmissao(new Concluida());
+    }
+
+    @Override
+    public void falhar(Submissao submissao) {
+        submissao.setEstadoSubmissao(new Falha());
     }
 
     @Override

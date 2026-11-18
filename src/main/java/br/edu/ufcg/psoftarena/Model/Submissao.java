@@ -54,5 +54,9 @@ public class Submissao {
         estadoSubimissao.proximoEstado(this);
     }
 
+    public void falhar() {
+        estadoSubimissao.falhar(this);
+    }
+
     public void setEstadoSubmissao(EstadoSubimissao estadoSubmissao) { this.estadoSubimissao = estadoSubmissao; }
 }

@@ -40,8 +40,12 @@ class SubmissaoEncaminhamentoTests {
 
     @BeforeEach
     void preparar() {
+        EstadoSubmissaoPadraoService estadoService = new EstadoSubmissaoPadraoService();
+        estadoService.submissaoRepository = repository;
+        estadoService.historicoEstadoSubmissaoRepository = historicoRepository;
         service.submissaoRepository = repository;
-        service.historicoEstadoSubmissaoRepository = historicoRepository;
+        service.estadoSubmissaoService = estadoService;
+        service.enfileiradorSubmissoes = new EnfileiradorSubmissoes();
     }
 
     @Test
