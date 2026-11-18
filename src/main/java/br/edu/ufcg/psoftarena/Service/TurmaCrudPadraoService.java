@@ -162,7 +162,6 @@ public class TurmaCrudPadraoService implements TurmaCrudService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                 "Associação entre estudante e turma não encontrada");
         }
-
         turmaRepository.save(turma);
     }
 

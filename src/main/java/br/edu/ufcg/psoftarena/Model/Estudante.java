@@ -30,4 +30,21 @@ public class Estudante {
     @Column(name = "email", nullable = false)
     @JsonProperty("email")
     private String email;
+
+    @Override
+    public final boolean equals(Object outro) {
+        if (this == outro) {
+            return true;
+        }
+        if (!(outro instanceof Estudante estudante)) {
+            return false;
+        }
+        return getId() != null && getId().equals(estudante.getId());
+    }
+
+    @Override
+    public final int hashCode() {
+        // O hash deve permanecer estável mesmo quando a persistência gerar o ID.
+        return Estudante.class.hashCode();
+    }
 }
