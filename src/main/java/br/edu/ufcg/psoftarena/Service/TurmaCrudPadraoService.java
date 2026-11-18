@@ -156,7 +156,8 @@ public class TurmaCrudPadraoService implements TurmaCrudService {
         Turma turma = getExistingTurma(turmaId);
         getExistingEstudante(estudanteId);
 
-        if (!podeRemoverEstudante(turma, estudanteId)) {
+        boolean removido = turma.getEstudantes().removeIf(estudante -> estudante.getId().equals(estudanteId));
+        if (!removido) {
             throw new RecursoNaoEncontradoException("Associação entre estudante e turma não encontrada");
         }
         turmaRepository.save(turma);
@@ -171,11 +172,6 @@ public class TurmaCrudPadraoService implements TurmaCrudService {
         }
 
         return false;
-    }
-
-    //metodo auxiliar
-    private boolean podeRemoverEstudante(Turma turma, Long estudanteId) {
-        return turma.getEstudantes().removeIf(e -> e.getId().equals(estudanteId));
     }
 
     private Turma getExistingTurma(Long id) {
