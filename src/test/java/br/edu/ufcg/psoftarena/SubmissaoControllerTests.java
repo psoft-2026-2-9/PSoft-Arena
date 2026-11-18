@@ -284,10 +284,39 @@ public class SubmissaoControllerTests {
     void testConsultarSubmissaoDeOutroEstudante() throws Exception {
         var submissao = submeterComSucesso(atividade.getId(), estudante.getId());
         Estudante outro = salvarEstudante();
+        matricularEstudanteNaTurma(outro);
         driver.perform(get(uriSubmissao(atividade.getId()) + "/" + submissao.getId())
                         .param("estudanteId", outro.getId().toString()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("Submissão não encontrada"));
+    }
+
+    @Test
+    @DisplayName("Estudante fora da turma não pode listar ou consultar submissões")
+    void testConsultasEstudanteForaDaTurma() throws Exception {
+        var submissao = submeterComSucesso(atividade.getId(), estudante.getId());
+        Estudante outro = salvarEstudante();
+
+        for (String sufixo : List.of("", "/" + submissao.getId())) {
+            driver.perform(get(uriSubmissao(atividade.getId()) + sufixo)
+                            .param("estudanteId", outro.getId().toString()))
+                    .andExpect(status().isConflict());
+        }
+    }
+
+    @Test
+    @DisplayName("Estudante removido da turma não pode consultar suas submissões anteriores")
+    void testConsultasAposRemocaoDaTurma() throws Exception {
+        var submissao = submeterComSucesso(atividade.getId(), estudante.getId());
+        turma.getEstudantes().remove(estudante);
+        turmaRepository.saveAndFlush(turma);
+        entityManager.clear();
+
+        for (String sufixo : List.of("", "/" + submissao.getId())) {
+            driver.perform(get(uriSubmissao(atividade.getId()) + sufixo)
+                            .param("estudanteId", estudante.getId().toString()))
+                    .andExpect(status().isConflict());
+        }
     }
 
     @Test

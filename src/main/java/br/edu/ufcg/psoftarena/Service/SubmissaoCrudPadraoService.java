@@ -51,8 +51,7 @@ public class SubmissaoCrudPadraoService implements SubmissaoCrudService {
             throw new RegraNegocioException("Prazo da atividade expirado");
         }
 
-        Estudante estudante = getExistingEstudante(submissaoPostDto.getEstudanteId());
-        turmaCrudService.validarEstudantePertenceTurma(atividade.getTurma().getId(), estudante.getId());
+        Estudante estudante = validarEstudanteDaAtividade(atividade, submissaoPostDto.getEstudanteId());
 
         int versao = submissaoRepository
                 .findFirstByAtividadeIdAndEstudanteIdOrderByVersaoDesc(atividade.getId(), estudante.getId())
@@ -99,8 +98,8 @@ public class SubmissaoCrudPadraoService implements SubmissaoCrudService {
     @Override
     @Transactional(readOnly = true)
     public List<SubmissaoResponseDto> listarSubmissoes(Long atividadeId, Long estudanteId) {
-        getExistingAtividade(atividadeId);
-        getExistingEstudante(estudanteId);
+        Atividade atividade = getExistingAtividade(atividadeId);
+        validarEstudanteDaAtividade(atividade, estudanteId);
         return submissaoRepository.findByAtividadeIdAndEstudanteIdOrderByVersaoDesc(atividadeId, estudanteId)
                 .stream().map(this::toResponse).toList();
     }
@@ -108,8 +107,8 @@ public class SubmissaoCrudPadraoService implements SubmissaoCrudService {
     @Override
     @Transactional(readOnly = true)
     public SubmissaoResponseDto consultarSubmissao(Long atividadeId, Long submissaoId, Long estudanteId) {
-        getExistingAtividade(atividadeId);
-        getExistingEstudante(estudanteId);
+        Atividade atividade = getExistingAtividade(atividadeId);
+        validarEstudanteDaAtividade(atividade, estudanteId);
         Submissao submissao = submissaoRepository
                 .findByIdAndAtividadeIdAndEstudanteId(submissaoId, atividadeId, estudanteId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Submissão não encontrada"));
@@ -159,6 +158,12 @@ public class SubmissaoCrudPadraoService implements SubmissaoCrudService {
     private Atividade getExistingAtividade(Long id) {
         return atividadeRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Atividade não encontrada"));
+    }
+
+    private Estudante validarEstudanteDaAtividade(Atividade atividade, Long estudanteId) {
+        Estudante estudante = getExistingEstudante(estudanteId);
+        turmaCrudService.validarEstudantePertenceTurma(atividade.getTurma().getId(), estudante.getId());
+        return estudante;
     }
 
     private Estudante getExistingEstudante(Long id) {
