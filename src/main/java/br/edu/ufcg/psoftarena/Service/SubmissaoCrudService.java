@@ -8,8 +8,6 @@ public interface SubmissaoCrudService {
 
     SubmissaoResponseDto submeterSolucao(Long atividadeId, SubmissaoPostDto submissaoPostDto);
 
-    SubmissaoResponseDto encaminharParaFila(Long submissaoId);
-
     List<SubmissaoResponseDto> listarSubmissoes(Long atividadeId, Long estudanteId);
 
     SubmissaoResponseDto consultarSubmissao(Long atividadeId, Long submissaoId, Long estudanteId);

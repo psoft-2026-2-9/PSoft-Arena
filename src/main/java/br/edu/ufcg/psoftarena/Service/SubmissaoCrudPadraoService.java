@@ -71,29 +71,8 @@ public class SubmissaoCrudPadraoService implements SubmissaoCrudService {
         return encaminharParaFila(submissao);
     }
 
-    @Override
-    @Transactional
-    public SubmissaoResponseDto encaminharParaFila(Long submissaoId) {
-        Submissao submissao = submissaoRepository.findById(submissaoId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Submissão não encontrada"));
 
-        return encaminharParaFila(submissao);
-    }
 
-    private SubmissaoResponseDto encaminharParaFila(Submissao submissao) {
-        if (!(submissao.getEstadoSubimissao() instanceof Submetida)) {
-            throw new RegraNegocioException(
-                    "Somente submissões no estado Submetida podem ser encaminhadas para a fila");
-        }
-
-        if (!avancarEstado(submissao)) {
-            return toResponse(submissao);
-        }
-
-        FilaSubmissoes.getInstance().adicionar(submissao.getId());
-
-        return toResponse(submissao);
-    }
 
     @Override
     @Transactional(readOnly = true)
@@ -115,6 +94,20 @@ public class SubmissaoCrudPadraoService implements SubmissaoCrudService {
         return toResponse(submissao);
     }
 
+    private SubmissaoResponseDto encaminharParaFila(Submissao submissao) {
+        if (!(submissao.getEstadoSubimissao() instanceof Submetida)) {
+            throw new RegraNegocioException(
+                    "Somente submissões no estado Submetida podem ser encaminhadas para a fila");
+        }
+
+        if (!avancarEstado(submissao)) {
+            return toResponse(submissao);
+        }
+
+        FilaSubmissoes.getInstance().adicionar(submissao.getId());
+
+        return toResponse(submissao);
+    }
 
     private boolean avancarEstado(Submissao submissao) {
         String estadoAnterior = submissao.getEstadoSubimissao().getCodigo();
