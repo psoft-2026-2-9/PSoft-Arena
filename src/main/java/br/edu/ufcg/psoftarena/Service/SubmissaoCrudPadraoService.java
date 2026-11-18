@@ -6,13 +6,10 @@ import br.edu.ufcg.psoftarena.Exception.RecursoNaoEncontradoException;
 import br.edu.ufcg.psoftarena.Exception.RegraNegocioException;
 import br.edu.ufcg.psoftarena.Model.Atividade;
 import br.edu.ufcg.psoftarena.Model.Estudante;
-import br.edu.ufcg.psoftarena.Model.FilaSubmissoes;
-import br.edu.ufcg.psoftarena.Model.HistoricoEstadoSubmissao;
 import br.edu.ufcg.psoftarena.Model.Submissao;
 import br.edu.ufcg.psoftarena.Model.State.Subimissao.Submetida;
 import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
 import br.edu.ufcg.psoftarena.Repository.EstudanteRepository;
-import br.edu.ufcg.psoftarena.Repository.HistoricoEstadoSubmissaoRepository;
 import br.edu.ufcg.psoftarena.Repository.SubmissaoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -29,7 +26,10 @@ public class SubmissaoCrudPadraoService implements SubmissaoCrudService {
     SubmissaoRepository submissaoRepository;
 
     @Autowired
-    HistoricoEstadoSubmissaoRepository historicoEstadoSubmissaoRepository;
+    EstadoSubmissaoService estadoSubmissaoService;
+
+    @Autowired
+    EnfileiradorSubmissoes enfileiradorSubmissoes;
 
     @Autowired
     AtividadeRepository atividadeRepository;
@@ -67,7 +67,7 @@ public class SubmissaoCrudPadraoService implements SubmissaoCrudService {
                 .build();
 
         submissao = salvarSubmissao(submissao);
-        registrarEstado(submissao, null, submissao.getDataHoraSubmissao());
+        estadoSubmissaoService.registrarCriacao(submissao);
         return encaminharParaFila(submissao);
     }
 
@@ -100,43 +100,13 @@ public class SubmissaoCrudPadraoService implements SubmissaoCrudService {
                     "Somente submissões no estado Submetida podem ser encaminhadas para a fila");
         }
 
-        if (!avancarEstado(submissao)) {
+        if (!estadoSubmissaoService.avancar(submissao)) {
             return toResponse(submissao);
         }
 
-        FilaSubmissoes.getInstance().adicionar(submissao.getId());
+        enfileiradorSubmissoes.enfileirarAposCommit(submissao.getId());
 
         return toResponse(submissao);
-    }
-
-    private boolean avancarEstado(Submissao submissao) {
-        String estadoAnterior = submissao.getEstadoSubimissao().getCodigo();
-        submissao.proximoEstado();
-        if (estadoAnterior.equals(submissao.getEstadoSubimissao().getCodigo())) {
-            return false;
-        }
-
-        submissaoRepository.saveAndFlush(submissao);
-        registrarEstado(submissao, estadoAnterior, LocalDateTime.now());
-        return true;
-    }
-
-    private void registrarEstado(Submissao submissao, String estadoAnterior, LocalDateTime dataHora) {
-        String estadoNovo = submissao.getEstadoSubimissao().getCodigo();
-        historicoEstadoSubmissaoRepository.save(HistoricoEstadoSubmissao.builder()
-                .submissao(submissao)
-                .estadoAnterior(estadoAnterior)
-                .estadoNovo(estadoNovo)
-                .dataHora(dataHora)
-                .build());
-
-        String mudanca = estadoAnterior == null
-                ? "registrada no estado " + estadoNovo
-                : estadoAnterior + " -> " + estadoNovo;
-        String mensagem = "Notificação ao estudante " + submissao.getEstudante().getId()
-                + ": submissão " + submissao.getId() + " - " + mudanca;
-
-        System.out.println(mensagem);
     }
 
     private Submissao salvarSubmissao(Submissao submissao) {
