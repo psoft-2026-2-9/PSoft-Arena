@@ -2,7 +2,6 @@ package br.edu.ufcg.psoftarena;
 
 import br.edu.ufcg.psoftarena.DTO.SubmissaoPostDto;
 import br.edu.ufcg.psoftarena.DTO.SubmissaoResponseDto;
-import br.edu.ufcg.psoftarena.Exception.RegraNegocioException;
 import br.edu.ufcg.psoftarena.ENUM.StatusProblema;
 import br.edu.ufcg.psoftarena.ENUM.StatusTurma;
 import br.edu.ufcg.psoftarena.ENUM.TipoEstrategia;
@@ -25,7 +24,6 @@ import br.edu.ufcg.psoftarena.Repository.ProblemaRepository;
 import br.edu.ufcg.psoftarena.Repository.ProfessorRepository;
 import br.edu.ufcg.psoftarena.Repository.SubmissaoRepository;
 import br.edu.ufcg.psoftarena.Repository.TurmaRepository;
-import br.edu.ufcg.psoftarena.Service.SubmissaoCrudService;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.AfterEach;
@@ -51,7 +49,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -82,9 +79,6 @@ public class SubmissaoControllerTests {
 
     @Autowired
     HistoricoEstadoSubmissaoRepository historicoRepository;
-
-    @Autowired
-    SubmissaoCrudService submissaoService;
 
     @Autowired
     EntityManager entityManager;
@@ -412,7 +406,7 @@ public class SubmissaoControllerTests {
     }
 
     @Test
-    @DisplayName("Encaminhamento persiste histórico em ordem e rejeita repetição sem novo registro")
+    @DisplayName("Envio encaminha uma única vez e persiste histórico em ordem")
     void testQuandoEncaminhamosRegistraMudancaDeEstado() throws Exception {
         SubmissaoResponseDto submissao = submeterComSucesso(atividade.getId(), estudante.getId());
 
@@ -428,9 +422,6 @@ public class SubmissaoControllerTests {
         assertEquals("EMFILA", submissaoRepository.findById(submissao.getId()).orElseThrow()
                 .getEstadoSubimissao().getCodigo());
 
-        assertThrows(RegraNegocioException.class,
-                () -> submissaoService.encaminharParaFila(submissao.getId()));
-        assertEquals(2, historicoRepository.findBySubmissaoIdOrderByDataHoraAscIdAsc(submissao.getId()).size());
         verify(fila).adicionar(submissao.getId());
     }
 

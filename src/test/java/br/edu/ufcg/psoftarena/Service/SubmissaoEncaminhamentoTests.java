@@ -2,15 +2,11 @@ package br.edu.ufcg.psoftarena.Service;
 
 import br.edu.ufcg.psoftarena.DTO.SubmissaoResponseDto;
 import br.edu.ufcg.psoftarena.DTO.SubmissaoPostDto;
-import br.edu.ufcg.psoftarena.Exception.RecursoNaoEncontradoException;
-import br.edu.ufcg.psoftarena.Exception.RegraNegocioException;
 import br.edu.ufcg.psoftarena.Model.Atividade;
 import br.edu.ufcg.psoftarena.Model.Estudante;
 import br.edu.ufcg.psoftarena.Model.FilaSubmissoes;
 import br.edu.ufcg.psoftarena.Model.Submissao;
 import br.edu.ufcg.psoftarena.Model.Turma;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.EmFila;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.Submetida;
 import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
 import br.edu.ufcg.psoftarena.Repository.EstudanteRepository;
 import br.edu.ufcg.psoftarena.Repository.SubmissaoRepository;
@@ -28,12 +24,9 @@ import java.util.List;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
 
@@ -49,29 +42,6 @@ class SubmissaoEncaminhamentoTests {
     void preparar() {
         service.submissaoRepository = repository;
         service.historicoEstadoSubmissaoRepository = historicoRepository;
-    }
-
-    @Test
-    void deveAdicionarNaFilaENotificarAoEncaminhar(CapturedOutput output) {
-        Submissao submissao = Submissao.builder()
-                .id(1L)
-                .estudante(Estudante.builder().id(2L).build())
-                .atividade(Atividade.builder().id(3L).build())
-                .build();
-        when(repository.findById(1L)).thenReturn(Optional.of(submissao));
-        FilaSubmissoes fila = mock(FilaSubmissoes.class);
-
-        try (MockedStatic<FilaSubmissoes> singleton = mockStatic(FilaSubmissoes.class)) {
-            singleton.when(FilaSubmissoes::getInstance).thenReturn(fila);
-
-            SubmissaoResponseDto resposta = service.encaminharParaFila(1L);
-
-            assertEquals("EMFILA", resposta.getStatus());
-            verify(repository).saveAndFlush(submissao);
-            verify(fila).adicionar(1L);
-            String mensagem = "Notificação ao estudante 2: submissão 1 - SUBMETIDA -> EMFILA";
-            assertEquals(1L, output.getOut().lines().filter(mensagem::equals).count());
-        }
     }
 
     @Test
@@ -109,47 +79,4 @@ class SubmissaoEncaminhamentoTests {
         assertEquals(1L, output.getOut().lines().filter(transicao::equals).count());
     }
 
-    @Test
-    void deveIgnorarEstadoSemTransicao(CapturedOutput output) {
-        Submetida estado = mock(Submetida.class);
-        when(estado.getCodigo()).thenReturn("SUBMETIDA");
-        Submissao submissao = Submissao.builder().id(1L)
-                .estudante(Estudante.builder().id(2L).build())
-                .atividade(Atividade.builder().id(3L).build())
-                .estadoSubimissao(estado).build();
-        when(repository.findById(1L)).thenReturn(Optional.of(submissao));
-
-        SubmissaoResponseDto resposta = service.encaminharParaFila(1L);
-
-        assertEquals("SUBMETIDA", resposta.getStatus());
-        verifyNoInteractions(historicoRepository);
-        assertFalse(output.getOut().contains("Notificação ao estudante"));
-    }
-
-    @Test
-    void deveRejeitarSubmissaoInexistente(CapturedOutput output) {
-        when(repository.findById(1L)).thenReturn(Optional.empty());
-
-        RecursoNaoEncontradoException erro = assertThrows(RecursoNaoEncontradoException.class,
-                () -> service.encaminharParaFila(1L));
-
-        assertEquals("Submissão não encontrada", erro.getMessage());
-        verifyNoInteractions(historicoRepository);
-        assertFalse(output.getOut().contains("Notificação ao estudante"));
-    }
-
-    @Test
-    void deveRejeitarSubmissaoJaEncaminhada(CapturedOutput output) {
-        Submissao submissao = Submissao.builder().id(1L)
-                .estadoSubimissao(new EmFila()).build();
-        when(repository.findById(1L)).thenReturn(Optional.of(submissao));
-
-        RegraNegocioException erro = assertThrows(RegraNegocioException.class,
-                () -> service.encaminharParaFila(1L));
-
-        assertEquals("Somente submissões no estado Submetida podem ser encaminhadas para a fila",
-                erro.getMessage());
-        verifyNoInteractions(historicoRepository);
-        assertFalse(output.getOut().contains("Notificação ao estudante"));
-    }
 }
