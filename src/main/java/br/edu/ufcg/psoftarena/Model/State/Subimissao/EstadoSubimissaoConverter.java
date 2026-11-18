@@ -21,7 +21,7 @@ public class EstadoSubimissaoConverter implements AttributeConverter<EstadoSubim
             case "SUBMETIDA" -> new Submetida();
             case "EMFILA" -> new EmFila();
             case "PROCESSANDO" -> new Processando();
-            case "CONCLUIDO" -> new Concluida();
+            case "CONCLUIDA" -> new Concluida();
             case "FALHA" -> new Falha();
             default -> throw new IllegalArgumentException("Código de estado inválido: " + codigo);
         };

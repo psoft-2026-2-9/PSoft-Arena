@@ -10,5 +10,5 @@ public class Concluida implements EstadoSubimissao{
     }
 
     @Override
-    public String getCodigo() { return "CONCLUIDO";}
+    public String getCodigo() { return "CONCLUIDA";}
 }
