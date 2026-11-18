@@ -14,6 +14,7 @@ import br.edu.ufcg.psoftarena.Model.Submissao;
 import br.edu.ufcg.psoftarena.Repository.AvaliacaoRepository;
 import br.edu.ufcg.psoftarena.Repository.ResultadoModeloRepository;
 import br.edu.ufcg.psoftarena.Repository.SubmissaoRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 public class AvaliacaoPadraoService implements AvaliacaoService {
 
@@ -65,6 +67,7 @@ public class AvaliacaoPadraoService implements AvaliacaoService {
             List<ResultadoModelo> resultados = avaliarComModelos(submissao);
             transactionTemplate.executeWithoutResult(status -> registrarResultado(submissao, resultados));
         } catch (RuntimeException e) {
+            log.error("Falha inesperada ao avaliar a submissão {}", submissaoId, e);
             estadoSubmissaoService.falhar(getExistingSubmissao(submissaoId));
         }
     }

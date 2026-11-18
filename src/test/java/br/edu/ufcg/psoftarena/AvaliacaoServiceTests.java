@@ -289,9 +289,10 @@ public class AvaliacaoServiceTests {
     }
 
     @Test
-    @DisplayName("Erro inesperado durante a avaliação não deixa a submissão presa em Processando")
-    void testErroInesperadoResultaEmFalha() {
-        when(clienteLlm.enviarPrompt(any(), anyString())).thenThrow(new IllegalStateException("erro inesperado"));
+    @DisplayName("Erro inesperado registra ID e exceção completa e altera a submissão para Falha")
+    void testErroInesperadoResultaEmFalha(CapturedOutput output) {
+        when(clienteLlm.enviarPrompt(any(), anyString())).thenThrow(
+                new IllegalStateException("erro inesperado", new IllegalArgumentException("causa original")));
         Submissao submissao = salvarSubmissao(new EmFila());
 
         avaliacaoService.avaliarSubmissao(submissao.getId());
@@ -299,6 +300,9 @@ public class AvaliacaoServiceTests {
         assertEquals("FALHA", estadoAtual(submissao.getId()));
         assertTrue(avaliacaoRepository.findBySubmissaoId(submissao.getId()).isEmpty());
         assertEquals(List.of("EMFILA->PROCESSANDO", "PROCESSANDO->FALHA"), transicoes(submissao.getId()));
+        assertTrue(output.getAll().contains("Falha inesperada ao avaliar a submissão " + submissao.getId()));
+        assertTrue(output.getAll().contains("java.lang.IllegalStateException: erro inesperado"));
+        assertTrue(output.getAll().contains("Caused by: java.lang.IllegalArgumentException: causa original"));
     }
 
     @Test
