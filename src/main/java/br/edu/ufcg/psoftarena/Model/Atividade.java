@@ -59,14 +59,20 @@ public class Atividade {
 
     @ManyToOne
     @JoinColumn(name = "turma_id", nullable = false)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Turma turma;
 
     @ManyToOne
     @JoinColumn(name = "problema_id", nullable = false)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Problema problema;
 
     @ManyToOne
     @JoinColumn(name = "estrategia_id", nullable = false)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Estrategia estrategia;
 
     @Column(nullable = false)
@@ -77,11 +83,15 @@ public class Atividade {
 
     @JsonIgnore
     @Column(nullable = false)
-    private String llmChaveApiCriptografada; // criptografar para assegurar a segurança pedida da chave
-                                             // poderiamos so guardar ela e nunca expor no dto
+    @ToString.Exclude
+    private String llmChaveApiCriptografada;
 
     public boolean aceitaSubmissao() {
         return status.aceitaSubmissao();
+    }
+
+    public boolean prazoEncerrado(LocalDateTime momento) {
+        return momento.isAfter(prazo);
     }
 
     public boolean concluir() {

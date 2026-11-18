@@ -45,4 +45,8 @@ public class Problema {
     @NotNull
     @Enumerated(EnumType.STRING)
     private StatusProblema status;
+
+    public boolean estaAtivo() {
+        return status == StatusProblema.ATIVO;
+    }
 }
