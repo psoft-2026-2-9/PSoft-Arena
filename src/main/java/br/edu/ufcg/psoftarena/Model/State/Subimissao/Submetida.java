@@ -7,7 +7,7 @@ public class Submetida implements EstadoSubimissao{
 
     @Override
     public void proximoEstado(Submissao submissao) {
-        submissao.setEstadoSubimissao(new EmFila());
+        submissao.setEstadoSubmissao(new EmFila());
     }
 
     @Override

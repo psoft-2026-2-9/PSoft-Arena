@@ -6,7 +6,7 @@ public class EmFila implements EstadoSubimissao{
 
     @Override
     public void proximoEstado(Submissao submissao) {
-        submissao.setEstadoSubimissao(new Processando());
+        submissao.setEstadoSubmissao(new Processando());
     }
 
     @Override
