@@ -17,8 +17,6 @@ public interface TurmaCrudService {
 
     TurmaResponseDto encerrarTurma(Long id);
 
-    void validarTurmaAtiva(Long id);
-
     TurmaResponseDto adicionarEstudante(Long turmaId, Long estudanteId);
     
     void removerEstudante(Long turmaId, Long estudanteId);

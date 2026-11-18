@@ -2,6 +2,7 @@ package br.edu.ufcg.psoftarena.Service;
 
 import br.edu.ufcg.psoftarena.DTO.EstudantePostPutDto;
 import br.edu.ufcg.psoftarena.DTO.EstudanteResponseDto;
+import br.edu.ufcg.psoftarena.Exception.RegraNegocioException;
 import br.edu.ufcg.psoftarena.Model.Estudante;
 import br.edu.ufcg.psoftarena.Repository.EstudanteRepository;
 import br.edu.ufcg.psoftarena.Repository.SubmissaoRepository;
@@ -36,7 +37,7 @@ public class EstudanteCrudPadraoService implements EstudanteCrudService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Matrícula de estudante já cadastrada");
         }
         Estudante estudante = modelMapper.map(estudantePostPutDto, Estudante.class);
-        return modelMapper.map(salvarMatriculaUnica(estudante), EstudanteResponseDto.class);
+        return modelMapper.map(salvarEstudante(estudante), EstudanteResponseDto.class);
     }
 
     @Override
@@ -59,7 +60,7 @@ public class EstudanteCrudPadraoService implements EstudanteCrudService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Matrícula de estudante já cadastrada");
         }
         modelMapper.map(estudantePostPutDto, estudante);
-        return modelMapper.map(salvarMatriculaUnica(estudante), EstudanteResponseDto.class);
+        return modelMapper.map(salvarEstudante(estudante), EstudanteResponseDto.class);
     }
 
     @Override
@@ -75,15 +76,17 @@ public class EstudanteCrudPadraoService implements EstudanteCrudService {
             estudanteRepository.delete(estudante);
             estudanteRepository.flush();
         } catch (DataIntegrityViolationException e) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Estudante está associado a uma ou mais turmas", e);
+            throw new RegraNegocioException(
+                    "Não foi possível remover o estudante devido a uma restrição de integridade", e);
         }
     }
 
-    private Estudante salvarMatriculaUnica(Estudante estudante) {
+    private Estudante salvarEstudante(Estudante estudante) {
         try {
             return estudanteRepository.saveAndFlush(estudante);
         } catch (DataIntegrityViolationException e) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Matrícula de estudante já cadastrada", e);
+            throw new RegraNegocioException(
+                    "Não foi possível salvar o estudante devido a uma restrição de integridade", e);
         }
     }
 

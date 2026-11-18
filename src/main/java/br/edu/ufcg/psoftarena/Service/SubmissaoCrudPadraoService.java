@@ -114,7 +114,7 @@ public class SubmissaoCrudPadraoService implements SubmissaoCrudService {
             return submissaoRepository.saveAndFlush(submissao);
         } catch (DataIntegrityViolationException e) {
             throw new RegraNegocioException(
-                    "Submissão concorrente registrada, envie novamente", e);
+                    "Não foi possível salvar a submissão devido a uma restrição de integridade", e);
         }
     }
 

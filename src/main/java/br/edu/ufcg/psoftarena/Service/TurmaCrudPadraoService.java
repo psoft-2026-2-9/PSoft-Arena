@@ -75,7 +75,7 @@ public class TurmaCrudPadraoService implements TurmaCrudService {
     @Transactional
     public TurmaResponseDto updateTurma(Long id, TurmaPostPutDto turmaPostPutDto) {
         Turma turma = getExistingTurma(id);
-        if (turma.getStatus() == StatusTurma.ENCERRADA) {
+        if (!turma.estaAtiva()) {
             throw new RegraNegocioException("Turma encerrada não pode ser editada");
         }
         if (turmaRepository.existsByCodigoAndIdNot(turmaPostPutDto.getCodigo(), id)) {
@@ -95,19 +95,11 @@ public class TurmaCrudPadraoService implements TurmaCrudService {
     @Transactional 
     public TurmaResponseDto encerrarTurma(Long id) {
         Turma turma = getExistingTurma(id);
-        if (turma.getStatus() == StatusTurma.ENCERRADA) {
+        if (!turma.estaAtiva()) {
             throw new RegraNegocioException("Turma já está encerrada");
         }
         turma.setStatus(StatusTurma.ENCERRADA);
         return toResponse(turmaRepository.save(turma));
-    }
-
-    @Override
-    public void validarTurmaAtiva(Long id) {
-        Turma turma = getExistingTurma(id);
-        if (turma.getStatus() == StatusTurma.ENCERRADA) {
-            throw new RegraNegocioException("Turma encerrada não pode receber novas associações ou atividades");
-        }
     }
 
     @Override 
@@ -115,7 +107,7 @@ public class TurmaCrudPadraoService implements TurmaCrudService {
     public TurmaResponseDto adicionarEstudante(Long turmaId, Long estudanteId) {
         Turma turma = getExistingTurma(turmaId);
 
-        if (turma.getStatus() == StatusTurma.ENCERRADA) {
+        if (!turma.estaAtiva()) {
             throw new RegraNegocioException("Turma encerrada não pode receber novas associações");
         }
 

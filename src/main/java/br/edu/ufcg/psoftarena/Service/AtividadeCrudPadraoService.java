@@ -7,7 +7,6 @@ import br.edu.ufcg.psoftarena.Exception.RegraNegocioException;
 import br.edu.ufcg.psoftarena.DTO.AtividadePostDto;
 import br.edu.ufcg.psoftarena.DTO.AtividadeResponseDto;
 import br.edu.ufcg.psoftarena.ENUM.StatusProblema;
-import br.edu.ufcg.psoftarena.ENUM.StatusTurma;
 import br.edu.ufcg.psoftarena.Model.Atividade;
 import br.edu.ufcg.psoftarena.Model.Estrategia;
 import br.edu.ufcg.psoftarena.Model.Problema;
@@ -54,7 +53,7 @@ public class AtividadeCrudPadraoService implements AtividadeCrudService {
     @Transactional
     public AtividadeResponseDto criarAtividade(AtividadePostDto atividadePostDto) {
         Turma turma = getExistingTurma(atividadePostDto.getTurmaId());
-        if (turma.getStatus() != StatusTurma.ATIVA) {
+        if (!turma.estaAtiva()) {
             throw new RegraNegocioException("Turma encerrada não pode receber novas atividades");
         }
 
