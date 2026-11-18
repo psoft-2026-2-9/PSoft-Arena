@@ -7,8 +7,6 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-import java.util.List;
-
 @Component
 public class InterpretadorRespostaLlm {
 
@@ -22,23 +20,25 @@ public class InterpretadorRespostaLlm {
             throw new FalhaAvaliacaoException("Resposta do modelo sem nota válida entre 0 e 10");
         }
 
-        String justificativa = json.path("justificativa").asString("");
-        if (justificativa.isBlank()) {
+        JsonNode justificativa = json.path("justificativa");
+        if (!justificativa.isString() || justificativa.asString().isBlank()) {
             throw new FalhaAvaliacaoException("Resposta do modelo sem justificativa");
         }
 
-        List<String> evidencias = json.path("evidencias").values().stream()
-                .map(evidencia -> evidencia.asString(""))
-                .filter(evidencia -> !evidencia.isBlank())
-                .toList();
-        if (evidencias.isEmpty()) {
+        JsonNode evidencias = json.path("evidencias");
+        if (!evidencias.isArray() || evidencias.isEmpty()) {
             throw new FalhaAvaliacaoException("Resposta do modelo sem evidências");
+        }
+        boolean evidenciasValidas = evidencias.values().stream()
+                .allMatch(evidencia -> evidencia.isString() && !evidencia.asString().isBlank());
+        if (!evidenciasValidas) {
+            throw new FalhaAvaliacaoException("Resposta do modelo com evidências inválidas");
         }
 
         return RespostaLlmDto.builder()
                 .nota(nota.doubleValue())
-                .justificativa(justificativa)
-                .evidencias(evidencias)
+                .justificativa(justificativa.asString())
+                .evidencias(evidencias.values().stream().map(JsonNode::asString).toList())
                 .build();
     }
 

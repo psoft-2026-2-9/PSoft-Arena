@@ -65,7 +65,15 @@ class InterpretadorRespostaLlmTests {
                 "{\"nota\": 8, \"justificativa\": \"  \", \"evidencias\": [\"E\"]}",
                 "{\"nota\": 8, \"justificativa\": \"J\"}",
                 "{\"nota\": 8, \"justificativa\": \"J\", \"evidencias\": []}",
-                "{\"nota\": 8, \"justificativa\": \"J\", \"evidencias\": [\" \"]}");
+                "{\"nota\": 8, \"justificativa\": \"J\", \"evidencias\": [\" \"]}",
+                "{\"nota\": 8, \"justificativa\": 42, \"evidencias\": [\"E\"]}",
+                "{\"nota\": 8, \"justificativa\": [\"J\"], \"evidencias\": [\"E\"]}",
+                "{\"nota\": 8, \"justificativa\": \"J\", \"evidencias\": [123]}",
+                "{\"nota\": 8, \"justificativa\": \"J\", \"evidencias\": [\"E\", 123]}",
+                "{\"nota\": 8, \"justificativa\": \"J\", \"evidencias\": [\"E\", \" \"]}",
+                "{\"nota\": 8, \"justificativa\": \"J\", \"evidencias\": \"E\"}",
+                "{\"nota\": 8, \"justificativa\": \"J\", \"evidencias\": {\"a\": \"E\"}}",
+                "{\"nota\":8,\"justificativa\":42,\"evidencias\":[123]}");
 
         for (String resposta : respostasInvalidas) {
             assertThrows(FalhaAvaliacaoException.class, () -> interpretador.interpretar(resposta), resposta);
