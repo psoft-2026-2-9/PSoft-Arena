@@ -1,4 +1,4 @@
-package br.edu.ufcg.psoftarena.Model.State;
+package br.edu.ufcg.psoftarena.Model.State.Atividade;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;

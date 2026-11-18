@@ -7,7 +7,7 @@ import br.edu.ufcg.psoftarena.ENUM.StatusTurma;
 import br.edu.ufcg.psoftarena.Model.Atividade;
 import br.edu.ufcg.psoftarena.Model.Estrategia;
 import br.edu.ufcg.psoftarena.Model.Problema;
-import br.edu.ufcg.psoftarena.Model.State.AtividadeAberta;
+import br.edu.ufcg.psoftarena.Model.State.Atividade.AtividadeAberta;
 import br.edu.ufcg.psoftarena.Model.Turma;
 import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
 import br.edu.ufcg.psoftarena.Repository.EstrategiaRepository;

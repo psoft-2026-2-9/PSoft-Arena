@@ -1,6 +1,5 @@
 package br.edu.ufcg.psoftarena.DTO;
 
-import br.edu.ufcg.psoftarena.ENUM.StatusSubmissao;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,5 +30,5 @@ public class SubmissaoResponseDto {
     private LocalDateTime dataHoraSubmissao;
 
     @JsonProperty("status")
-    private StatusSubmissao status;
+    private String status;
 }
