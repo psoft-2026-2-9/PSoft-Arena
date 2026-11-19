@@ -13,7 +13,7 @@ import br.edu.ufcg.psoftarena.Model.Professor;
 import br.edu.ufcg.psoftarena.Model.State.Atividade.AtividadeAberta;
 import br.edu.ufcg.psoftarena.Model.State.Atividade.AtividadeConcluida;
 import br.edu.ufcg.psoftarena.Model.State.Atividade.EstadoAtividade;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.Processando;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.Processando;
 import br.edu.ufcg.psoftarena.Model.Turma;
 import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
 import br.edu.ufcg.psoftarena.Repository.EstudanteRepository;
@@ -421,7 +421,7 @@ public class SubmissaoControllerTests {
         assertEquals("EMFILA", historico.get(1).getEstadoNovo());
         assertFalse(historico.get(1).getDataHora().isBefore(historico.get(0).getDataHora()));
         assertEquals("EMFILA", submissaoRepository.findById(submissao.getId()).orElseThrow()
-                .getEstadoSubimissao().getCodigo());
+                .getEstadoSubmissao().getCodigo());
 
         verify(enfileiradorSubmissoes).enfileirarAposCommit(submissao.getId());
     }

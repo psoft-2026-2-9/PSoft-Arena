@@ -280,7 +280,7 @@ class SubmissaoFluxoIntegracaoTests {
     private void aguardarEstadoFinal(long id, String esperado) throws InterruptedException {
         long limite = System.nanoTime() + Duration.ofSeconds(5).toNanos();
         while (System.nanoTime() < limite) {
-            String atual = submissaoRepository.findById(id).orElseThrow().getEstadoSubimissao().getCodigo();
+            String atual = submissaoRepository.findById(id).orElseThrow().getEstadoSubmissao().getCodigo();
             if (esperado.equals(atual)) {
                 return;
             }

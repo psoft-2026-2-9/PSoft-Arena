@@ -38,9 +38,9 @@ public class EstadoSubmissaoPadraoService implements EstadoSubmissaoService {
     }
 
     private boolean mudarEstado(Submissao submissao, Runnable transicao) {
-        String estadoAnterior = submissao.getEstadoSubimissao().getCodigo();
+        String estadoAnterior = submissao.getEstadoSubmissao().getCodigo();
         transicao.run();
-        if (estadoAnterior.equals(submissao.getEstadoSubimissao().getCodigo())) {
+        if (estadoAnterior.equals(submissao.getEstadoSubmissao().getCodigo())) {
             return false;
         }
 
@@ -50,7 +50,7 @@ public class EstadoSubmissaoPadraoService implements EstadoSubmissaoService {
     }
 
     private void registrarEstado(Submissao submissao, String estadoAnterior, LocalDateTime dataHora) {
-        String estadoNovo = submissao.getEstadoSubimissao().getCodigo();
+        String estadoNovo = submissao.getEstadoSubmissao().getCodigo();
         historicoEstadoSubmissaoRepository.save(HistoricoEstadoSubmissao.builder()
                 .submissao(submissao)
                 .estadoAnterior(estadoAnterior)

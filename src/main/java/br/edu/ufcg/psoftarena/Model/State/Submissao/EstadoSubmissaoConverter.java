@@ -1,18 +1,18 @@
-package br.edu.ufcg.psoftarena.Model.State.Subimissao;
+package br.edu.ufcg.psoftarena.Model.State.Submissao;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
 @Converter
-public class EstadoSubimissaoConverter implements AttributeConverter<EstadoSubimissao, String> {
+public class EstadoSubmissaoConverter implements AttributeConverter<EstadoSubmissao, String> {
 
     @Override
-    public String convertToDatabaseColumn(EstadoSubimissao estado) {
+    public String convertToDatabaseColumn(EstadoSubmissao estado) {
         return estado == null ? null : estado.getCodigo();
     }
 
     @Override
-    public EstadoSubimissao convertToEntityAttribute(String codigo) {
+    public EstadoSubmissao convertToEntityAttribute(String codigo) {
         if (codigo == null) {
             return null;
         }

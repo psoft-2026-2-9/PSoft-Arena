@@ -7,7 +7,7 @@ import br.edu.ufcg.psoftarena.Exception.RegraNegocioException;
 import br.edu.ufcg.psoftarena.Model.Atividade;
 import br.edu.ufcg.psoftarena.Model.Estudante;
 import br.edu.ufcg.psoftarena.Model.Submissao;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.Submetida;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.Submetida;
 import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
 import br.edu.ufcg.psoftarena.Repository.EstudanteRepository;
 import br.edu.ufcg.psoftarena.Repository.SubmissaoRepository;
@@ -95,7 +95,7 @@ public class SubmissaoCrudPadraoService implements SubmissaoCrudService {
     }
 
     private SubmissaoResponseDto encaminharParaFila(Submissao submissao) {
-        if (!(submissao.getEstadoSubimissao() instanceof Submetida)) {
+        if (!(submissao.getEstadoSubmissao() instanceof Submetida)) {
             throw new RegraNegocioException(
                     "Somente submissões no estado Submetida podem ser encaminhadas para a fila");
         }
@@ -141,7 +141,7 @@ public class SubmissaoCrudPadraoService implements SubmissaoCrudService {
                 .atividadeId(submissao.getAtividade().getId())
                 .versao(submissao.getVersao())
                 .dataHoraSubmissao(submissao.getDataHoraSubmissao())
-                .status(submissao.getEstadoSubimissao().getCodigo())
+                .status(submissao.getEstadoSubmissao().getCodigo())
                 .build();
     }
 }

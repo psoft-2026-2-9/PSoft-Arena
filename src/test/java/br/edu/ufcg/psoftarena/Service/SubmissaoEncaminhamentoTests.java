@@ -3,7 +3,7 @@ package br.edu.ufcg.psoftarena.Service;
 import br.edu.ufcg.psoftarena.DTO.SubmissaoResponseDto;
 import br.edu.ufcg.psoftarena.DTO.SubmissaoPostDto;
 import br.edu.ufcg.psoftarena.Exception.RegraNegocioException;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.EmFila;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.EmFila;
 import br.edu.ufcg.psoftarena.Model.Atividade;
 import br.edu.ufcg.psoftarena.Model.Estudante;
 import br.edu.ufcg.psoftarena.Model.FilaSubmissoes;
@@ -109,7 +109,7 @@ class SubmissaoEncaminhamentoTests {
         List<String> estadosSalvos = new ArrayList<>();
         when(repository.saveAndFlush(any(Submissao.class))).thenAnswer(invocation -> {
             Submissao submissao = invocation.getArgument(0);
-            estadosSalvos.add(submissao.getEstadoSubimissao().getCodigo());
+            estadosSalvos.add(submissao.getEstadoSubmissao().getCodigo());
             submissao.setId(1L);
             return submissao;
         });

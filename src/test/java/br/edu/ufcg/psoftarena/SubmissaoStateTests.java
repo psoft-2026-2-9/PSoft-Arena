@@ -1,11 +1,11 @@
 package br.edu.ufcg.psoftarena;
 
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.Concluida;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.EmFila;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.EstadoSubimissao;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.Falha;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.Processando;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.Submetida;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.Concluida;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.EmFila;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.EstadoSubmissao;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.Falha;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.Processando;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.Submetida;
 import br.edu.ufcg.psoftarena.Model.Submissao;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,8 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @DisplayName("Classe de testes do estado da submissão")
 public class SubmissaoStateTests {
 
-    Submissao submissaoNoEstado(EstadoSubimissao estado) {
-        return Submissao.builder().estadoSubimissao(estado).build();
+    Submissao submissaoNoEstado(EstadoSubmissao estado) {
+        return Submissao.builder().estadoSubmissao(estado).build();
     }
 
     @Test
@@ -27,11 +27,11 @@ public class SubmissaoStateTests {
         Submissao submissao = submissaoNoEstado(new Submetida());
 
         submissao.proximoEstado();
-        assertEquals("EMFILA", submissao.getEstadoSubimissao().getCodigo());
+        assertEquals("EMFILA", submissao.getEstadoSubmissao().getCodigo());
         submissao.proximoEstado();
-        assertEquals("PROCESSANDO", submissao.getEstadoSubimissao().getCodigo());
+        assertEquals("PROCESSANDO", submissao.getEstadoSubmissao().getCodigo());
         submissao.proximoEstado();
-        assertEquals("CONCLUIDA", submissao.getEstadoSubimissao().getCodigo());
+        assertEquals("CONCLUIDA", submissao.getEstadoSubmissao().getCodigo());
     }
 
     @Test
@@ -41,30 +41,30 @@ public class SubmissaoStateTests {
 
         submissao.falhar();
 
-        assertEquals("FALHA", submissao.getEstadoSubimissao().getCodigo());
+        assertEquals("FALHA", submissao.getEstadoSubmissao().getCodigo());
     }
 
     @Test
     @DisplayName("Somente submissões em processamento podem falhar")
     void naoDeveFalharForaDoProcessamento() {
-        for (EstadoSubimissao estado : List.of(new Submetida(), new EmFila(), new Concluida(), new Falha())) {
+        for (EstadoSubmissao estado : List.of(new Submetida(), new EmFila(), new Concluida(), new Falha())) {
             Submissao submissao = submissaoNoEstado(estado);
 
             submissao.falhar();
 
-            assertEquals(estado.getCodigo(), submissao.getEstadoSubimissao().getCodigo());
+            assertEquals(estado.getCodigo(), submissao.getEstadoSubmissao().getCodigo());
         }
     }
 
     @Test
     @DisplayName("Estados finais não avançam")
     void estadosFinaisNaoDevemAvancar() {
-        for (EstadoSubimissao estado : List.of(new Concluida(), new Falha())) {
+        for (EstadoSubmissao estado : List.of(new Concluida(), new Falha())) {
             Submissao submissao = submissaoNoEstado(estado);
 
             submissao.proximoEstado();
 
-            assertEquals(estado.getCodigo(), submissao.getEstadoSubimissao().getCodigo());
+            assertEquals(estado.getCodigo(), submissao.getEstadoSubmissao().getCodigo());
         }
     }
 }

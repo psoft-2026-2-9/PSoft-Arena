@@ -1,7 +1,7 @@
 package br.edu.ufcg.psoftarena.Service;
 
 import br.edu.ufcg.psoftarena.Model.FilaSubmissoes;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.EmFila;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.EmFila;
 import br.edu.ufcg.psoftarena.Repository.SubmissaoRepository;
 import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +31,7 @@ public class ConsumidorFilaSubmissoes {
 
     @EventListener(ApplicationReadyEvent.class)
     public void iniciar() {
-        submissaoRepository.findAllByEstadoSubimissao(new EmFila())
+        submissaoRepository.findAllByEstadoSubmissao(new EmFila())
                 .forEach(submissao -> fila.adicionar(submissao.getId()));
 
         consumidor = new Thread(this::consumir, "consumidor-fila-submissoes");

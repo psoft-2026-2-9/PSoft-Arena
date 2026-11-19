@@ -1,7 +1,7 @@
 package br.edu.ufcg.psoftarena.Service;
 
 import br.edu.ufcg.psoftarena.Model.FilaSubmissoes;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.EmFila;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.EmFila;
 import br.edu.ufcg.psoftarena.Model.Submissao;
 import br.edu.ufcg.psoftarena.Repository.SubmissaoRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -65,9 +65,9 @@ class ConsumidorFilaSubmissoesTests {
         consumidor.avaliacaoService = mock(AvaliacaoService.class);
         consumidor.submissaoRepository = mock(SubmissaoRepository.class);
         when(fila.retirar()).thenThrow(new InterruptedException());
-        when(consumidor.submissaoRepository.findAllByEstadoSubimissao(any())).thenReturn(List.of(
-                Submissao.builder().id(7L).estadoSubimissao(new EmFila()).build(),
-                Submissao.builder().id(8L).estadoSubimissao(new EmFila()).build()));
+        when(consumidor.submissaoRepository.findAllByEstadoSubmissao(any())).thenReturn(List.of(
+                Submissao.builder().id(7L).estadoSubmissao(new EmFila()).build(),
+                Submissao.builder().id(8L).estadoSubmissao(new EmFila()).build()));
         consumidor.iniciar();
 
         verify(fila).adicionar(7L);

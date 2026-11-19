@@ -1,6 +1,6 @@
 package br.edu.ufcg.psoftarena;
 
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.*;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class EstadoSubmissaoConverterTests {
 
-    private final EstadoSubimissaoConverter converter = new EstadoSubimissaoConverter();
+    private final EstadoSubmissaoConverter converter = new EstadoSubmissaoConverter();
 
     @Test
     void preservaValoresNulosNosDoisSentidos() {

@@ -1,8 +1,8 @@
-package br.edu.ufcg.psoftarena.Model.State.Subimissao;
+package br.edu.ufcg.psoftarena.Model.State.Submissao;
 
 import br.edu.ufcg.psoftarena.Model.Submissao;
 
-public interface EstadoSubimissao {
+public interface EstadoSubmissao {
     void proximoEstado(Submissao submissao);
 
     default void falhar(Submissao submissao) {}

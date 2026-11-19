@@ -1,8 +1,8 @@
-package br.edu.ufcg.psoftarena.Model.State.Subimissao;
+package br.edu.ufcg.psoftarena.Model.State.Submissao;
 
 import br.edu.ufcg.psoftarena.Model.Submissao;
 
-public class EmFila implements EstadoSubimissao{
+public class EmFila implements EstadoSubmissao{
 
     @Override
     public void proximoEstado(Submissao submissao) {

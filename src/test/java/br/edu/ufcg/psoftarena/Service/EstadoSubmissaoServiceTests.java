@@ -1,7 +1,7 @@
 package br.edu.ufcg.psoftarena.Service;
 
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.Concluida;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.Submetida;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.Concluida;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.Submetida;
 import br.edu.ufcg.psoftarena.Model.Submissao;
 import br.edu.ufcg.psoftarena.Repository.HistoricoEstadoSubmissaoRepository;
 import br.edu.ufcg.psoftarena.Repository.SubmissaoRepository;
@@ -23,16 +23,16 @@ class EstadoSubmissaoServiceTests {
         service.submissaoRepository = mock(SubmissaoRepository.class);
         service.historicoEstadoSubmissaoRepository = mock(HistoricoEstadoSubmissaoRepository.class);
         var concluida = new Concluida();
-        Submissao finalizada = Submissao.builder().estadoSubimissao(concluida).build();
+        Submissao finalizada = Submissao.builder().estadoSubmissao(concluida).build();
         var submetida = new Submetida();
-        Submissao nova = Submissao.builder().estadoSubimissao(submetida).build();
+        Submissao nova = Submissao.builder().estadoSubmissao(submetida).build();
 
         assertFalse(service.avancar(finalizada));
         assertFalse(service.falhar(finalizada));
         assertFalse(service.falhar(nova));
 
-        assertSame(concluida, finalizada.getEstadoSubimissao());
-        assertSame(submetida, nova.getEstadoSubimissao());
+        assertSame(concluida, finalizada.getEstadoSubmissao());
+        assertSame(submetida, nova.getEstadoSubmissao());
         verifyNoInteractions(service.submissaoRepository, service.historicoEstadoSubmissaoRepository);
         assertFalse(output.getAll().contains("Notificação ao estudante"));
     }
