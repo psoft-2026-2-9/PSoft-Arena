@@ -1,5 +1,7 @@
 package br.edu.ufcg.psoftarena.Service;
 
+import br.edu.ufcg.psoftarena.Exception.RecursoNaoEncontradoException;
+
 import br.edu.ufcg.psoftarena.DTO.EstrategiaPostPutDto;
 import br.edu.ufcg.psoftarena.DTO.EstrategiaResponseDto;
 import br.edu.ufcg.psoftarena.ENUM.TipoEstrategia;
@@ -7,9 +9,7 @@ import br.edu.ufcg.psoftarena.Model.Estrategia;
 import br.edu.ufcg.psoftarena.Repository.EstrategiaRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -55,6 +55,6 @@ public class EstrategiaCrudPadraoService implements EstrategiaCrudService {
 
     private Estrategia getExistingEstrategia(Long id) {
         return estrategiaRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Estratégia não encontrada"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Estratégia não encontrada"));
     }
 }

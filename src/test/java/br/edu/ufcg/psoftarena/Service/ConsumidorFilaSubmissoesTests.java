@@ -1,0 +1,81 @@
+package br.edu.ufcg.psoftarena.Service;
+
+import br.edu.ufcg.psoftarena.Model.FilaSubmissoes;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.EmFila;
+import br.edu.ufcg.psoftarena.Model.Submissao;
+import br.edu.ufcg.psoftarena.Repository.SubmissaoRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(OutputCaptureExtension.class)
+@DisplayName("Classe de testes do consumidor da fila de submissões")
+class ConsumidorFilaSubmissoesTests {
+
+    private ConsumidorFilaSubmissoes consumidor = new ConsumidorFilaSubmissoes();
+
+    @BeforeEach
+    void setUp() {
+        consumidor.avaliacaoService = mock(AvaliacaoService.class);
+        consumidor.submissaoRepository = mock(SubmissaoRepository.class);
+    }
+
+    @AfterEach
+    void tearDown() {
+        consumidor.parar();
+    }
+
+    @Test
+    @DisplayName("Processar encaminha a submissão para avaliação")
+    void deveAvaliarSubmissaoRetirada() {
+        consumidor.processar(5L);
+
+        verify(consumidor.avaliacaoService).avaliarSubmissao(5L);
+    }
+
+    @Test
+    @DisplayName("Erro ao avaliar uma submissão não interrompe o consumidor")
+    void naoDevePropagarErroDaAvaliacao(CapturedOutput output) {
+        doThrow(new IllegalStateException("erro", new IllegalArgumentException("causa original"))).when(consumidor.avaliacaoService).avaliarSubmissao(6L);
+
+        assertDoesNotThrow(() -> consumidor.processar(6L));
+
+        assertTrue(output.getAll().contains("Erro ao processar a submissão 6"));
+        assertTrue(output.getAll().contains("java.lang.IllegalStateException: erro"));
+        assertTrue(output.getAll().contains("Caused by: java.lang.IllegalArgumentException: causa original"));
+
+        assertDoesNotThrow(() -> consumidor.processar(7L));
+        verify(consumidor.avaliacaoService).avaliarSubmissao(7L);
+    }
+
+    @Test
+    @DisplayName("Ao iniciar, submissões que estavam em fila voltam para a fila")
+    void deveReenfileirarSubmissoesPendentesAoIniciar() throws InterruptedException {
+        FilaSubmissoes fila = mock(FilaSubmissoes.class);
+        consumidor = new ConsumidorFilaSubmissoes(fila);
+        consumidor.avaliacaoService = mock(AvaliacaoService.class);
+        consumidor.submissaoRepository = mock(SubmissaoRepository.class);
+        when(fila.retirar()).thenThrow(new InterruptedException());
+        when(consumidor.submissaoRepository.findAllByEstadoSubmissao(any())).thenReturn(List.of(
+                Submissao.builder().id(7L).estadoSubmissao(new EmFila()).build(),
+                Submissao.builder().id(8L).estadoSubmissao(new EmFila()).build()));
+        consumidor.iniciar();
+
+        verify(fila).adicionar(7L);
+        verify(fila).adicionar(8L);
+    }
+}

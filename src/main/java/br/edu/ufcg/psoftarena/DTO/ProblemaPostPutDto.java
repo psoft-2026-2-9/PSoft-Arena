@@ -26,9 +26,9 @@ public class ProblemaPostPutDto {
 
     @JsonProperty("requisitos_funcionais")
     @NotEmpty(message = "Requisitos funcionais não podem ser vazios")
-    private List<String> requisitosFuncionais;
+    private List<@NotBlank(message = "Requisito funcional não pode ser vazio") String> requisitosFuncionais;
 
     @JsonProperty("requisitos_de_projeto")
     @NotEmpty(message = "Requisitos de projeto não podem ser vazios")
-    private List<String> requisitosDeProjeto;
+    private List<@NotBlank(message = "Requisito de projeto não pode ser vazio") String> requisitosDeProjeto;
 }

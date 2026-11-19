@@ -58,4 +58,8 @@ public class Turma {
     @Builder.Default
     @JsonProperty("estudantes")
     private Set<Estudante> estudantes = new HashSet<>();
+
+    public boolean estaAtiva() {
+        return status == StatusTurma.ATIVA;
+    }
 }

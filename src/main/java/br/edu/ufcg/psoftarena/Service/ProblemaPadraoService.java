@@ -1,15 +1,17 @@
 package br.edu.ufcg.psoftarena.Service;
 
+import br.edu.ufcg.psoftarena.Exception.RegraNegocioException;
+import br.edu.ufcg.psoftarena.Exception.RecursoNaoEncontradoException;
+
 import br.edu.ufcg.psoftarena.DTO.ProblemaPostPutDto;
 import br.edu.ufcg.psoftarena.DTO.ProblemaResponseDto;
 import br.edu.ufcg.psoftarena.ENUM.StatusProblema;
 import br.edu.ufcg.psoftarena.Model.Problema;
+import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
 import br.edu.ufcg.psoftarena.Repository.ProblemaRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -21,6 +23,9 @@ public class ProblemaPadraoService implements ProblemaService {
 
     @Autowired
     ProblemaRepository problemaRepository;
+
+    @Autowired
+    AtividadeRepository atividadeRepository;
 
     @Override
     public ProblemaResponseDto addProblema(ProblemaPostPutDto problemaPostPutDto) {
@@ -54,8 +59,12 @@ public class ProblemaPadraoService implements ProblemaService {
 
     @Override
     public void deleteProblema(Long id) {
-        // tem que validar ainda se o problema faz parte de alguma atividade
-        problemaRepository.delete(getExistingProblema(id));
+        // não pode ser deletado caso tenha um problema associado
+        Problema problema = getExistingProblema(id);
+        if (atividadeRepository.existsByProblemaId(id)) {
+            throw new RegraNegocioException("Problema associado a uma atividade não pode ser removido");
+        }
+        problemaRepository.delete(problema);
     }
 
     @Override
@@ -68,6 +77,6 @@ public class ProblemaPadraoService implements ProblemaService {
 
     private Problema getExistingProblema(Long id) {
         return problemaRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Problema não encontrado"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Problema não encontrado"));
     }
 }

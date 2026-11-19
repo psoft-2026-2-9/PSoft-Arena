@@ -5,6 +5,8 @@ import br.edu.ufcg.psoftarena.Model.Problema;
 import br.edu.ufcg.psoftarena.Repository.ProblemaRepository;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -20,6 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -72,6 +75,31 @@ class ProblemaControllerTests {
         assertEquals(totalAnterior, repository.count());
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"null", "\"\"", "\"   \""})
+    void deveRejeitarItensInvalidosNosRequisitosAoCriarEAtualizar(String itemJson) throws Exception {
+        Problema problema = salvarProblema();
+        long totalAnterior = repository.count();
+
+        for (String campo : List.of("requisitos_funcionais", "requisitos_de_projeto")) {
+            String dadosInvalidos = dados("Arena revisada").replace(
+                    campo.equals("requisitos_funcionais") ? "[\"Listar jogadores\"]" : "[\"Usar Spring\"]",
+                    "[" + itemJson + "]");
+
+            driver.perform(post(URI).contentType(MediaType.APPLICATION_JSON).content(dadosInvalidos))
+                    .andExpect(status().isBadRequest());
+            driver.perform(put(URI + "/{id}", problema.getId())
+                            .contentType(MediaType.APPLICATION_JSON).content(dadosInvalidos))
+                    .andExpect(status().isBadRequest());
+        }
+
+        assertEquals(totalAnterior, repository.count());
+        Problema existente = repository.findById(problema.getId()).orElseThrow();
+        assertEquals("Arena", existente.getTitulo());
+        assertEquals(List.of("Cadastrar jogador"), existente.getRequisitosFuncionais());
+        assertEquals(List.of("Usar Java"), existente.getRequisitosDeProjeto());
+    }
+
     @Test
     void deveListarProblemas() throws Exception {
         long id = salvarProblema().getId();
@@ -94,7 +122,10 @@ class ProblemaControllerTests {
     @Test
     void deveRetornarNaoEncontradoParaIdInexistente() throws Exception {
         driver.perform(get(URI + "/{id}", Long.MAX_VALUE))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.detail").value("Problema não encontrado"));
     }
 
     @Test

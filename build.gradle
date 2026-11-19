@@ -25,6 +25,7 @@ dependencies {
 	runtimeOnly 'com.h2database:h2'
 
 	implementation 'org.modelmapper:modelmapper:3.2.8'
+	implementation 'org.springframework.security:spring-security-crypto'
 
 	compileOnly 'org.projectlombok:lombok:1.18.42'
 	annotationProcessor 'org.projectlombok:lombok:1.18.42'
@@ -37,4 +38,5 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	environment 'APP_CRYPTO_SECRET', 'test-secret-psoft-arena'
 }
