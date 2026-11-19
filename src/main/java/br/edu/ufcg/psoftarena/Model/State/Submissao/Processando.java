@@ -2,18 +2,22 @@ package br.edu.ufcg.psoftarena.Model.State.Submissao;
 
 import br.edu.ufcg.psoftarena.Model.Submissao;
 
-public class Processando implements EstadoSubmissao{
+public class Processando implements EstadoSubmissao {
 
     @Override
-    public void proximoEstado(Submissao submissao) {
-        submissao.setEstadoSubmissao(new Concluida());
+    public boolean concluir(Submissao submissao) {
+        submissao.mudarEstado(new Concluida());
+        return true;
     }
 
     @Override
-    public void falhar(Submissao submissao) {
-        submissao.setEstadoSubmissao(new Falha());
+    public boolean falhar(Submissao submissao) {
+        submissao.mudarEstado(new Falha());
+        return true;
     }
 
     @Override
-    public String getCodigo() { return "PROCESSANDO";}
+    public String getCodigo() {
+        return "PROCESSANDO";
+    }
 }

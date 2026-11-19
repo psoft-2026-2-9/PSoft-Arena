@@ -11,14 +11,42 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Classe de testes do estado da submissão")
 public class SubmissaoStateTests {
 
+    final Map<String, Predicate<Submissao>> transicoes = Map.of(
+            "enfileirar", Submissao::enfileirar,
+            "processar", Submissao::processar,
+            "concluir", Submissao::concluir,
+            "falhar", Submissao::falhar);
+
+    final Map<String, String> transicoesValidas = Map.of(
+            "SUBMETIDA:enfileirar", "EMFILA",
+            "EMFILA:processar", "PROCESSANDO",
+            "PROCESSANDO:concluir", "CONCLUIDA",
+            "PROCESSANDO:falhar", "FALHA");
+
     Submissao submissaoNoEstado(EstadoSubmissao estado) {
         return Submissao.builder().estadoSubmissao(estado).build();
+    }
+
+    List<EstadoSubmissao> todosOsEstados() {
+        return List.of(new Submetida(), new EmFila(), new Processando(), new Concluida(), new Falha());
+    }
+
+    @Test
+    @DisplayName("Nova submissão começa no estado Submetida")
+    void novaSubmissaoComecaSubmetida() {
+        assertEquals("SUBMETIDA", Submissao.builder().build().getEstadoSubmissao().getCodigo());
     }
 
     @Test
@@ -26,11 +54,11 @@ public class SubmissaoStateTests {
     void devePercorrerFluxoDeSucesso() {
         Submissao submissao = submissaoNoEstado(new Submetida());
 
-        submissao.proximoEstado();
+        assertTrue(submissao.enfileirar());
         assertEquals("EMFILA", submissao.getEstadoSubmissao().getCodigo());
-        submissao.proximoEstado();
+        assertTrue(submissao.processar());
         assertEquals("PROCESSANDO", submissao.getEstadoSubmissao().getCodigo());
-        submissao.proximoEstado();
+        assertTrue(submissao.concluir());
         assertEquals("CONCLUIDA", submissao.getEstadoSubmissao().getCodigo());
     }
 
@@ -39,32 +67,39 @@ public class SubmissaoStateTests {
     void deveFalharDuranteProcessamento() {
         Submissao submissao = submissaoNoEstado(new Processando());
 
-        submissao.falhar();
+        assertTrue(submissao.falhar());
 
         assertEquals("FALHA", submissao.getEstadoSubmissao().getCodigo());
     }
 
     @Test
-    @DisplayName("Somente submissões em processamento podem falhar")
-    void naoDeveFalharForaDoProcessamento() {
-        for (EstadoSubmissao estado : List.of(new Submetida(), new EmFila(), new Concluida(), new Falha())) {
-            Submissao submissao = submissaoNoEstado(estado);
+    @DisplayName("Cada estado aceita somente as suas transições e recusa as demais sem mudar")
+    void cadaEstadoAceitaSomenteSuasTransicoes() {
+        for (EstadoSubmissao estado : todosOsEstados()) {
+            transicoes.forEach((nome, transicao) -> {
+                Submissao submissao = submissaoNoEstado(estado);
+                String chave = estado.getCodigo() + ":" + nome;
 
-            submissao.falhar();
+                boolean mudou = transicao.test(submissao);
 
-            assertEquals(estado.getCodigo(), submissao.getEstadoSubmissao().getCodigo());
+                if (transicoesValidas.containsKey(chave)) {
+                    assertTrue(mudou, chave);
+                    assertEquals(transicoesValidas.get(chave), submissao.getEstadoSubmissao().getCodigo(), chave);
+                } else {
+                    assertFalse(mudou, chave);
+                    assertSame(estado, submissao.getEstadoSubmissao(), chave);
+                }
+            });
         }
     }
 
     @Test
-    @DisplayName("Estados finais não avançam")
-    void estadosFinaisNaoDevemAvancar() {
-        for (EstadoSubmissao estado : List.of(new Concluida(), new Falha())) {
-            Submissao submissao = submissaoNoEstado(estado);
+    @DisplayName("Estado da submissão não pode ser nulo")
+    void estadoNaoPodeSerNulo() {
+        Submissao submissao = submissaoNoEstado(new Submetida());
 
-            submissao.proximoEstado();
-
-            assertEquals(estado.getCodigo(), submissao.getEstadoSubmissao().getCodigo());
-        }
+        assertThrows(NullPointerException.class, () -> submissao.mudarEstado(null));
+        assertThrows(NullPointerException.class, () -> Submissao.builder().estadoSubmissao(null).build());
+        assertEquals("SUBMETIDA", submissao.getEstadoSubmissao().getCodigo());
     }
 }

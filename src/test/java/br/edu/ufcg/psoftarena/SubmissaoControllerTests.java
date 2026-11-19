@@ -249,7 +249,7 @@ public class SubmissaoControllerTests {
     void testConsultarEstadoAtual() throws Exception {
         var resposta = submeterComSucesso(atividade.getId(), estudante.getId());
         var submissao = submissaoRepository.findById(resposta.getId()).orElseThrow();
-        submissao.setEstadoSubmissao(new Processando());
+        submissao.mudarEstado(new Processando());
         submissaoRepository.saveAndFlush(submissao);
         atividade.concluir();
         atividadeRepository.saveAndFlush(atividade);

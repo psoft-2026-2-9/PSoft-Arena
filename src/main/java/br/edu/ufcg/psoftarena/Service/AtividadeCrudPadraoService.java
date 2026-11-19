@@ -6,7 +6,6 @@ import br.edu.ufcg.psoftarena.Exception.RegraNegocioException;
 
 import br.edu.ufcg.psoftarena.DTO.AtividadePostDto;
 import br.edu.ufcg.psoftarena.DTO.AtividadeResponseDto;
-import br.edu.ufcg.psoftarena.ENUM.StatusProblema;
 import br.edu.ufcg.psoftarena.Model.Atividade;
 import br.edu.ufcg.psoftarena.Model.Estrategia;
 import br.edu.ufcg.psoftarena.Model.Problema;
@@ -16,6 +15,7 @@ import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
 import br.edu.ufcg.psoftarena.Repository.EstrategiaRepository;
 import br.edu.ufcg.psoftarena.Repository.ProblemaRepository;
 import br.edu.ufcg.psoftarena.Repository.TurmaRepository;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.stereotype.Service;
@@ -49,6 +49,9 @@ public class AtividadeCrudPadraoService implements AtividadeCrudService {
     @Autowired
     EstudanteRepository estudanteRepository;
 
+    @Autowired
+    ModelMapper modelMapper;
+
     @Override
     @Transactional
     public AtividadeResponseDto criarAtividade(AtividadePostDto atividadePostDto) {
@@ -58,7 +61,7 @@ public class AtividadeCrudPadraoService implements AtividadeCrudService {
         }
 
         Problema problema = getExistingProblema(atividadePostDto.getProblemaId());
-        if (problema.getStatus() != StatusProblema.ATIVO) {
+        if (!problema.estaAtivo()) {
             throw new RegraNegocioException("Problema inativo não pode ser usado em atividades");
         }
 
@@ -162,42 +165,12 @@ public class AtividadeCrudPadraoService implements AtividadeCrudService {
         return AtividadeConsultaResponseDto.builder()
                 .id(atividade.getId())
                 .titulo(atividade.getTitulo())
-                .turma(toTurmaResumo(atividade.getTurma()))
-                .problema(toProblemaResponse(atividade.getProblema()))
+                .turma(modelMapper.map(atividade.getTurma(), TurmaResumoDto.class))
+                .problema(modelMapper.map(atividade.getProblema(), ProblemaResponseDto.class))
                 .descricao(atividade.getDescricao())
-                .estrategiaAvaliacao(toEstrategiaResumo(atividade.getEstrategia()))
+                .estrategiaAvaliacao(modelMapper.map(atividade.getEstrategia(), EstrategiaResumoDto.class))
                 .prazo(atividade.getPrazo())
                 .status(atividade.getStatus().getCodigo())
-                .build();
-    }
-
-    private TurmaResumoDto toTurmaResumo(Turma turma) {
-        return TurmaResumoDto.builder()
-                .id(turma.getId())
-                .nome(turma.getNome())
-                .codigo(turma.getCodigo())
-                .periodoLetivo(turma.getPeriodoLetivo())
-                .status(turma.getStatus())
-                .build();
-    }
-
-    private ProblemaResponseDto toProblemaResponse(Problema problema) {
-        return ProblemaResponseDto.builder()
-                .id(problema.getId())
-                .titulo(problema.getTitulo())
-                .descricao(problema.getDescricao())
-                .requisitosFuncionais(problema.getRequisitosFuncionais())
-                .requisitosDeProjeto(problema.getRequisitosDeProjeto())
-                .status(problema.getStatus())
-                .build();
-    }
-
-    private EstrategiaResumoDto toEstrategiaResumo(Estrategia estrategia) {
-        return EstrategiaResumoDto.builder()
-                .id(estrategia.getId())
-                .nome(estrategia.getNome())
-                .tipo(estrategia.getTipo())
-                .descricao(estrategia.getDescricao())
                 .build();
     }
 }

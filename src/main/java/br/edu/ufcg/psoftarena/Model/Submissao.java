@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Builder
@@ -26,10 +27,14 @@ public class Submissao {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "estudante_id", nullable = false)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Estudante estudante;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "atividade_id", nullable = false)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Atividade atividade;
 
     @Column(nullable = false)
@@ -40,6 +45,7 @@ public class Submissao {
 
     @Lob
     @Column(nullable = false)
+    @ToString.Exclude
     private String codigoFonte;
 
     @Convert(converter = EstadoSubmissaoConverter.class)
@@ -48,15 +54,27 @@ public class Submissao {
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
+    @NonNull
+    @Setter(AccessLevel.NONE)
     private EstadoSubmissao estadoSubmissao = new Submetida();
 
-    public void proximoEstado() {
-        estadoSubmissao.proximoEstado(this);
+    public boolean enfileirar() {
+        return estadoSubmissao.enfileirar(this);
     }
 
-    public void falhar() {
-        estadoSubmissao.falhar(this);
+    public boolean processar() {
+        return estadoSubmissao.processar(this);
     }
 
-    public void setEstadoSubmissao(EstadoSubmissao estadoSubmissao) { this.estadoSubmissao = estadoSubmissao; }
+    public boolean concluir() {
+        return estadoSubmissao.concluir(this);
+    }
+
+    public boolean falhar() {
+        return estadoSubmissao.falhar(this);
+    }
+
+    public void mudarEstado(EstadoSubmissao novoEstado) {
+        this.estadoSubmissao = Objects.requireNonNull(novoEstado, "Estado da submissão não pode ser nulo");
+    }
 }

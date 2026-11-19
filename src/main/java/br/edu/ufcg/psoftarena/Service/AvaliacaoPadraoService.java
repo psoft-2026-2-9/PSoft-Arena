@@ -9,7 +9,6 @@ import br.edu.ufcg.psoftarena.Exception.RegraNegocioException;
 import br.edu.ufcg.psoftarena.Model.Atividade;
 import br.edu.ufcg.psoftarena.Model.Avaliacao;
 import br.edu.ufcg.psoftarena.Model.ResultadoModelo;
-import br.edu.ufcg.psoftarena.Model.State.Submissao.EmFila;
 import br.edu.ufcg.psoftarena.Model.Submissao;
 import br.edu.ufcg.psoftarena.Repository.AvaliacaoRepository;
 import br.edu.ufcg.psoftarena.Repository.ResultadoModeloRepository;
@@ -57,11 +56,9 @@ public class AvaliacaoPadraoService implements AvaliacaoService {
     @Override
     public void avaliarSubmissao(Long submissaoId) {
         Submissao submissao = getExistingSubmissao(submissaoId);
-        if (!(submissao.getEstadoSubmissao() instanceof EmFila)) {
+        if (!estadoSubmissaoService.iniciarProcessamento(submissao)) {
             throw new RegraNegocioException("Somente submissões no estado Em fila podem ser avaliadas");
         }
-
-        estadoSubmissaoService.avancar(submissao);
 
         try {
             List<ResultadoModelo> resultados = avaliarComModelos(submissao);
@@ -114,7 +111,7 @@ public class AvaliacaoPadraoService implements AvaliacaoService {
 
         if (resultados.stream().allMatch(ResultadoModelo::isSucesso)) {
             avaliacaoRepository.save(Avaliacao.compor(submissao, resultados));
-            estadoSubmissaoService.avancar(submissao);
+            estadoSubmissaoService.concluir(submissao);
         } else {
             estadoSubmissaoService.falhar(submissao);
         }

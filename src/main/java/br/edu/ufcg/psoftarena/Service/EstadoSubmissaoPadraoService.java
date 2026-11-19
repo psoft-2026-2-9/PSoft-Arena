@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.function.BooleanSupplier;
 
 @Service
 public class EstadoSubmissaoPadraoService implements EstadoSubmissaoService {
@@ -19,6 +20,9 @@ public class EstadoSubmissaoPadraoService implements EstadoSubmissaoService {
     @Autowired
     HistoricoEstadoSubmissaoRepository historicoEstadoSubmissaoRepository;
 
+    @Autowired
+    NotificadorEstudante notificadorEstudante;
+
     @Override
     @Transactional
     public void registrarCriacao(Submissao submissao) {
@@ -27,8 +31,20 @@ public class EstadoSubmissaoPadraoService implements EstadoSubmissaoService {
 
     @Override
     @Transactional
-    public boolean avancar(Submissao submissao) {
-        return mudarEstado(submissao, submissao::proximoEstado);
+    public boolean enfileirar(Submissao submissao) {
+        return mudarEstado(submissao, submissao::enfileirar);
+    }
+
+    @Override
+    @Transactional
+    public boolean iniciarProcessamento(Submissao submissao) {
+        return mudarEstado(submissao, submissao::processar);
+    }
+
+    @Override
+    @Transactional
+    public boolean concluir(Submissao submissao) {
+        return mudarEstado(submissao, submissao::concluir);
     }
 
     @Override
@@ -37,10 +53,9 @@ public class EstadoSubmissaoPadraoService implements EstadoSubmissaoService {
         return mudarEstado(submissao, submissao::falhar);
     }
 
-    private boolean mudarEstado(Submissao submissao, Runnable transicao) {
+    private boolean mudarEstado(Submissao submissao, BooleanSupplier transicao) {
         String estadoAnterior = submissao.getEstadoSubmissao().getCodigo();
-        transicao.run();
-        if (estadoAnterior.equals(submissao.getEstadoSubmissao().getCodigo())) {
+        if (!transicao.getAsBoolean()) {
             return false;
         }
 
@@ -61,9 +76,6 @@ public class EstadoSubmissaoPadraoService implements EstadoSubmissaoService {
         String mudanca = estadoAnterior == null
                 ? "registrada no estado " + estadoNovo
                 : estadoAnterior + " -> " + estadoNovo;
-        String mensagem = "Notificação ao estudante " + submissao.getEstudante().getId()
-                + ": submissão " + submissao.getId() + " - " + mudanca;
-
-        System.out.println(mensagem);
+        notificadorEstudante.notificar(submissao.getEstudante(), "submissão " + submissao.getId() + " - " + mudanca);
     }
 }

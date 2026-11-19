@@ -32,7 +32,7 @@ public class SubmissaoController {
     }
 
     @PostMapping
-    public ResponseEntity<?> submeterSolucao(@PathVariable Long atividadeId,
+    public ResponseEntity<SubmissaoResponseDto> submeterSolucao(@PathVariable Long atividadeId,
                                              @RequestBody @Valid SubmissaoPostDto submissaoPostDto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(submissaoCrudService.submeterSolucao(atividadeId, submissaoPostDto));

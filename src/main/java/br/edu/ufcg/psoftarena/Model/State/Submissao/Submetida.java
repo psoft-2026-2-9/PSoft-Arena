@@ -1,15 +1,17 @@
 package br.edu.ufcg.psoftarena.Model.State.Submissao;
 
-
 import br.edu.ufcg.psoftarena.Model.Submissao;
 
-public class Submetida implements EstadoSubmissao{
+public class Submetida implements EstadoSubmissao {
 
     @Override
-    public void proximoEstado(Submissao submissao) {
-        submissao.setEstadoSubmissao(new EmFila());
+    public boolean enfileirar(Submissao submissao) {
+        submissao.mudarEstado(new EmFila());
+        return true;
     }
 
     @Override
-    public String getCodigo() { return "SUBMETIDA";}
+    public String getCodigo() {
+        return "SUBMETIDA";
+    }
 }

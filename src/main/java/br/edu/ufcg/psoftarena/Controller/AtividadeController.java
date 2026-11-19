@@ -1,6 +1,7 @@
 package br.edu.ufcg.psoftarena.Controller;
 
 import br.edu.ufcg.psoftarena.DTO.AtividadePostDto;
+import br.edu.ufcg.psoftarena.DTO.AtividadeResponseDto;
 import br.edu.ufcg.psoftarena.Service.AtividadeCrudService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,12 +26,12 @@ public class AtividadeController {
     AtividadeCrudService atividadeService;
 
     @PostMapping
-    public ResponseEntity<?> criarAtividade(@RequestBody @Valid AtividadePostDto atividadePostDto) {
+    public ResponseEntity<AtividadeResponseDto> criarAtividade(@RequestBody @Valid AtividadePostDto atividadePostDto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(atividadeService.criarAtividade(atividadePostDto));
     }
 
     @PutMapping("/{id}/concluir")
-    public ResponseEntity<?> concluirAtividade(@PathVariable Long id) {
+    public ResponseEntity<AtividadeResponseDto> concluirAtividade(@PathVariable Long id) {
         return ResponseEntity.status(HttpStatus.OK).body(atividadeService.concluirAtividade(id));
     }
 

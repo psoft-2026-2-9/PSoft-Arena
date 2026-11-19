@@ -3,8 +3,17 @@ package br.edu.ufcg.psoftarena.Model.State.Atividade;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 @Converter
 public class EstadoAtividadeConverter implements AttributeConverter<EstadoAtividade, String> {
+
+    private static final Map<String, EstadoAtividade> ESTADOS = Stream.of(
+                    new AtividadeAberta(), new AtividadeConcluida())
+            .collect(Collectors.toMap(EstadoAtividade::getCodigo, Function.identity()));
 
     @Override
     public String convertToDatabaseColumn(EstadoAtividade estado) {
@@ -17,10 +26,10 @@ public class EstadoAtividadeConverter implements AttributeConverter<EstadoAtivid
             return null;
         }
 
-        return switch (codigo) {
-            case "ABERTA" -> new AtividadeAberta();
-            case "CONCLUIDA" -> new AtividadeConcluida();
-            default -> throw new IllegalArgumentException("Código de estado inválido: " + codigo);
-        };
+        EstadoAtividade estado = ESTADOS.get(codigo);
+        if (estado == null) {
+            throw new IllegalArgumentException("Código de estado inválido: " + codigo);
+        }
+        return estado;
     }
 }
