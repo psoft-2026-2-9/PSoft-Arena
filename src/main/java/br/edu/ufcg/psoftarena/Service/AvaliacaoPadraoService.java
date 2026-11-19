@@ -9,11 +9,11 @@ import br.edu.ufcg.psoftarena.Exception.RegraNegocioException;
 import br.edu.ufcg.psoftarena.Model.Atividade;
 import br.edu.ufcg.psoftarena.Model.Avaliacao;
 import br.edu.ufcg.psoftarena.Model.ResultadoModelo;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.EmFila;
 import br.edu.ufcg.psoftarena.Model.Submissao;
 import br.edu.ufcg.psoftarena.Repository.AvaliacaoRepository;
 import br.edu.ufcg.psoftarena.Repository.ResultadoModeloRepository;
 import br.edu.ufcg.psoftarena.Repository.SubmissaoRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.stereotype.Service;
@@ -22,6 +22,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 public class AvaliacaoPadraoService implements AvaliacaoService {
 
@@ -55,16 +56,15 @@ public class AvaliacaoPadraoService implements AvaliacaoService {
     @Override
     public void avaliarSubmissao(Long submissaoId) {
         Submissao submissao = getExistingSubmissao(submissaoId);
-        if (!(submissao.getEstadoSubimissao() instanceof EmFila)) {
+        if (!estadoSubmissaoService.iniciarProcessamento(submissao)) {
             throw new RegraNegocioException("Somente submissões no estado Em fila podem ser avaliadas");
         }
-
-        estadoSubmissaoService.avancar(submissao);
 
         try {
             List<ResultadoModelo> resultados = avaliarComModelos(submissao);
             transactionTemplate.executeWithoutResult(status -> registrarResultado(submissao, resultados));
         } catch (RuntimeException e) {
+            log.error("Falha inesperada ao avaliar a submissão {}", submissaoId, e);
             estadoSubmissaoService.falhar(getExistingSubmissao(submissaoId));
         }
     }
@@ -111,7 +111,7 @@ public class AvaliacaoPadraoService implements AvaliacaoService {
 
         if (resultados.stream().allMatch(ResultadoModelo::isSucesso)) {
             avaliacaoRepository.save(Avaliacao.compor(submissao, resultados));
-            estadoSubmissaoService.avancar(submissao);
+            estadoSubmissaoService.concluir(submissao);
         } else {
             estadoSubmissaoService.falhar(submissao);
         }

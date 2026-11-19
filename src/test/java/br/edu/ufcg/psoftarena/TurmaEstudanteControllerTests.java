@@ -19,10 +19,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.server.ResponseStatusException;
+import br.edu.ufcg.psoftarena.Exception.EstudanteNaoPertenceTurmaException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
@@ -464,9 +463,9 @@ public class TurmaEstudanteControllerTests {
         Turma turma = salvarTurma("Turma A", "TURMA-A", "2026.2", professor, StatusTurma.ATIVA);
         Estudante estudante = salvarEstudante("Maria", "124210001", "maria@ccc.ufcg.edu.br");
 
-        ResponseStatusException excecao = assertThrows(ResponseStatusException.class,
+        EstudanteNaoPertenceTurmaException excecao = assertThrows(EstudanteNaoPertenceTurmaException.class,
                 () -> turmaCrudService.validarEstudantePertenceTurma(turma.getId(), estudante.getId()));
 
-        assertEquals(HttpStatus.CONFLICT.value(), excecao.getStatusCode().value());
+        assertEquals("Estudante não pertence à turma", excecao.getMessage());
     }
 }

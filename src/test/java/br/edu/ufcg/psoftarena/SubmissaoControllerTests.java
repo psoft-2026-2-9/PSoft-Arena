@@ -13,7 +13,7 @@ import br.edu.ufcg.psoftarena.Model.Professor;
 import br.edu.ufcg.psoftarena.Model.State.Atividade.AtividadeAberta;
 import br.edu.ufcg.psoftarena.Model.State.Atividade.AtividadeConcluida;
 import br.edu.ufcg.psoftarena.Model.State.Atividade.EstadoAtividade;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.Processando;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.Processando;
 import br.edu.ufcg.psoftarena.Model.Turma;
 import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
 import br.edu.ufcg.psoftarena.Repository.EstudanteRepository;
@@ -249,7 +249,7 @@ public class SubmissaoControllerTests {
     void testConsultarEstadoAtual() throws Exception {
         var resposta = submeterComSucesso(atividade.getId(), estudante.getId());
         var submissao = submissaoRepository.findById(resposta.getId()).orElseThrow();
-        submissao.setEstadoSubmissao(new Processando());
+        submissao.mudarEstado(new Processando());
         submissaoRepository.saveAndFlush(submissao);
         atividade.concluir();
         atividadeRepository.saveAndFlush(atividade);
@@ -289,7 +289,10 @@ public class SubmissaoControllerTests {
         for (String sufixo : List.of("", "/" + submissao.getId())) {
             driver.perform(get(uriSubmissao(atividade.getId()) + sufixo)
                             .param("estudanteId", outro.getId().toString()))
-                    .andExpect(status().isConflict());
+                    .andExpect(status().isForbidden())
+                    .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                    .andExpect(jsonPath("$.status").value(403))
+                    .andExpect(jsonPath("$.detail").value("Estudante não pertence à turma"));
         }
     }
 
@@ -304,7 +307,10 @@ public class SubmissaoControllerTests {
         for (String sufixo : List.of("", "/" + submissao.getId())) {
             driver.perform(get(uriSubmissao(atividade.getId()) + sufixo)
                             .param("estudanteId", estudante.getId().toString()))
-                    .andExpect(status().isConflict());
+                    .andExpect(status().isForbidden())
+                    .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                    .andExpect(jsonPath("$.status").value(403))
+                    .andExpect(jsonPath("$.detail").value("Estudante não pertence à turma"));
         }
     }
 
@@ -415,7 +421,7 @@ public class SubmissaoControllerTests {
         assertEquals("EMFILA", historico.get(1).getEstadoNovo());
         assertFalse(historico.get(1).getDataHora().isBefore(historico.get(0).getDataHora()));
         assertEquals("EMFILA", submissaoRepository.findById(submissao.getId()).orElseThrow()
-                .getEstadoSubimissao().getCodigo());
+                .getEstadoSubmissao().getCodigo());
 
         verify(enfileiradorSubmissoes).enfileirarAposCommit(submissao.getId());
     }
@@ -445,7 +451,10 @@ public class SubmissaoControllerTests {
         driver.perform(post(uriSubmissao(atividade.getId()))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corpoSubmissao(estudanteFora.getId(), CODIGO_FONTE)))
-                .andExpect(status().isConflict())
+                .andExpect(status().isForbidden())
+                    .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                    .andExpect(jsonPath("$.status").value(403))
+                    .andExpect(jsonPath("$.detail").value("Estudante não pertence à turma"))
                 .andDo(print());
 
         assertEquals(0, submissaoRepository.findAll().size());

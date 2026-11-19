@@ -19,8 +19,12 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import lombok.NonNull;
+import lombok.Setter;
+import lombok.AccessLevel;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Builder
@@ -49,18 +53,26 @@ public class Atividade {
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
+    @NonNull
+    @Setter(AccessLevel.NONE)
     private EstadoAtividade status = new AtividadeAberta();
 
     @ManyToOne
     @JoinColumn(name = "turma_id", nullable = false)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Turma turma;
 
     @ManyToOne
     @JoinColumn(name = "problema_id", nullable = false)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Problema problema;
 
     @ManyToOne
     @JoinColumn(name = "estrategia_id", nullable = false)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Estrategia estrategia;
 
     @Column(nullable = false)
@@ -71,25 +83,22 @@ public class Atividade {
 
     @JsonIgnore
     @Column(nullable = false)
-    private String llmChaveApiCriptografada; // criptografar para assegurar a segurança pedida da chave
-                                             // poderiamos so guardar ela e nunca expor no dto
+    @ToString.Exclude
+    private String llmChaveApiCriptografada;
 
     public boolean aceitaSubmissao() {
-        return statusAtual().aceitaSubmissao();
+        return status.aceitaSubmissao();
+    }
+
+    public boolean prazoEncerrado(LocalDateTime momento) {
+        return momento.isAfter(prazo);
     }
 
     public boolean concluir() {
-        return statusAtual().concluir(this);
+        return status.concluir(this);
     }
 
     public void mudarEstado(EstadoAtividade novoEstado) {
-        this.status = novoEstado;
-    }
-
-    private EstadoAtividade statusAtual() {
-        if (status == null) {
-            status = new AtividadeAberta();
-        }
-        return status;
+        this.status = Objects.requireNonNull(novoEstado, "Estado da atividade não pode ser nulo");
     }
 }

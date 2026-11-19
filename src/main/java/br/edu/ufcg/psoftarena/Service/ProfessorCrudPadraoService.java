@@ -1,14 +1,14 @@
 package br.edu.ufcg.psoftarena.Service;
 
+import br.edu.ufcg.psoftarena.Exception.RecursoNaoEncontradoException;
+
 import br.edu.ufcg.psoftarena.DTO.ProfessorPostPutDto;
 import br.edu.ufcg.psoftarena.DTO.ProfessorResponseDto;
 import br.edu.ufcg.psoftarena.Model.Professor;
 import br.edu.ufcg.psoftarena.Repository.ProfessorRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -54,6 +54,6 @@ public class ProfessorCrudPadraoService implements ProfessorCrudService {
 
     private Professor getExistingProfessor(Long id) {
         return professorRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Professor não encontrado"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Professor não encontrado"));
     }
 }

@@ -9,9 +9,35 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 @DisplayName("Classe de testes do estado da atividade")
 public class AtividadeStateTests {
+
+    @Test
+    void novaAtividadeComecaAberta() {
+        Atividade atividade = new Atividade();
+        assertEquals("ABERTA", atividade.getStatus().getCodigo());
+        assertTrue(atividade.aceitaSubmissao());
+    }
+
+    @Test
+    void estadoNuloNaoReabreAtividadeConcluida() {
+        AtividadeConcluida estado = new AtividadeConcluida();
+        Atividade atividade = Atividade.builder().status(estado).build();
+
+        assertThrows(NullPointerException.class, () -> atividade.mudarEstado(null));
+
+        assertSame(estado, atividade.getStatus());
+        assertFalse(atividade.aceitaSubmissao());
+    }
+
+    @Test
+    void builderNaoAceitaEstadoNulo() {
+        assertThrows(NullPointerException.class, () -> Atividade.builder().status(null).build());
+        assertTrue(Atividade.builder().build().aceitaSubmissao());
+    }
 
     @Test
     @DisplayName("Atividade aberta aceita submissão")

@@ -9,11 +9,20 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @DisplayName("Classe de testes do interpretador da resposta do LLM")
 class InterpretadorRespostaLlmTests {
 
     private final InterpretadorRespostaLlm interpretador = new InterpretadorRespostaLlm();
+
+    @Test
+    void rejeitaJsonMalformadoMesmoComChavesDeAberturaEFechamento() {
+        FalhaAvaliacaoException erro = assertThrows(FalhaAvaliacaoException.class,
+                () -> interpretador.interpretar("{\"nota\": 8, \"justificativa\": }"));
+        assertEquals("Resposta do modelo não é um JSON válido", erro.getMessage());
+        assertNotNull(erro.getCause());
+    }
 
     @Test
     @DisplayName("Interpreta resposta JSON válida")

@@ -9,6 +9,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(EstudanteNaoPertenceTurmaException.class)
+    public ResponseEntity<ProblemDetail> tratarEstudanteNaoPertenceTurma(
+            EstudanteNaoPertenceTurmaException exception) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, exception.getMessage()));
+    }
+
     @ExceptionHandler(RecursoNaoEncontradoException.class)
     public ResponseEntity<ProblemDetail> tratarRecursoNaoEncontrado(
             RecursoNaoEncontradoException exception) {

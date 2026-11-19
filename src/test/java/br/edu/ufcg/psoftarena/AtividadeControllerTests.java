@@ -37,6 +37,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -204,6 +205,9 @@ public class AtividadeControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonAtividade(999L, 999L, 999L)))
                 .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.detail").value("Turma não encontrada"))
                 .andDo(print());
 
         assertEquals(0, atividadeRepository.count());
@@ -252,6 +256,9 @@ public class AtividadeControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonAtividade(turma.getId(), problema.getId(), estrategia.getId())))
                 .andExpect(status().isConflict())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.detail").value("Turma encerrada não pode receber novas atividades"))
                 .andDo(print());
 
         assertEquals(0, atividadeRepository.count());
@@ -330,6 +337,9 @@ public class AtividadeControllerTests {
         driver.perform(delete("/problemas/" + problema.getId())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isConflict())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.detail").value("Problema associado a uma atividade não pode ser removido"))
                 .andDo(print());
 
         assertTrue(problemaRepository.existsById(problema.getId()));

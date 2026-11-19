@@ -16,9 +16,9 @@ import br.edu.ufcg.psoftarena.Model.Problema;
 import br.edu.ufcg.psoftarena.Model.Professor;
 import br.edu.ufcg.psoftarena.Model.ResultadoModelo;
 import br.edu.ufcg.psoftarena.Model.State.Atividade.AtividadeAberta;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.EmFila;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.EstadoSubimissao;
-import br.edu.ufcg.psoftarena.Model.State.Subimissao.Processando;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.EmFila;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.EstadoSubmissao;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.Processando;
 import br.edu.ufcg.psoftarena.Model.Submissao;
 import br.edu.ufcg.psoftarena.Model.Turma;
 import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
@@ -176,19 +176,19 @@ public class AvaliacaoServiceTests {
         professorRepository.deleteAll();
     }
 
-    Submissao salvarSubmissao(EstadoSubimissao estado) {
+    Submissao salvarSubmissao(EstadoSubmissao estado) {
         return submissaoRepository.save(Submissao.builder()
                 .estudante(estudante)
                 .atividade(atividade)
                 .versao(1)
                 .dataHoraSubmissao(LocalDateTime.now())
                 .codigoFonte(CODIGO_FONTE)
-                .estadoSubimissao(estado)
+                .estadoSubmissao(estado)
                 .build());
     }
 
     String estadoAtual(Long submissaoId) {
-        return submissaoRepository.findById(submissaoId).orElseThrow().getEstadoSubimissao().getCodigo();
+        return submissaoRepository.findById(submissaoId).orElseThrow().getEstadoSubmissao().getCodigo();
     }
 
     List<String> transicoes(Long submissaoId) {
@@ -289,9 +289,10 @@ public class AvaliacaoServiceTests {
     }
 
     @Test
-    @DisplayName("Erro inesperado durante a avaliação não deixa a submissão presa em Processando")
-    void testErroInesperadoResultaEmFalha() {
-        when(clienteLlm.enviarPrompt(any(), anyString())).thenThrow(new IllegalStateException("erro inesperado"));
+    @DisplayName("Erro inesperado registra ID e exceção completa e altera a submissão para Falha")
+    void testErroInesperadoResultaEmFalha(CapturedOutput output) {
+        when(clienteLlm.enviarPrompt(any(), anyString())).thenThrow(
+                new IllegalStateException("erro inesperado", new IllegalArgumentException("causa original")));
         Submissao submissao = salvarSubmissao(new EmFila());
 
         avaliacaoService.avaliarSubmissao(submissao.getId());
@@ -299,6 +300,9 @@ public class AvaliacaoServiceTests {
         assertEquals("FALHA", estadoAtual(submissao.getId()));
         assertTrue(avaliacaoRepository.findBySubmissaoId(submissao.getId()).isEmpty());
         assertEquals(List.of("EMFILA->PROCESSANDO", "PROCESSANDO->FALHA"), transicoes(submissao.getId()));
+        assertTrue(output.getAll().contains("Falha inesperada ao avaliar a submissão " + submissao.getId()));
+        assertTrue(output.getAll().contains("java.lang.IllegalStateException: erro inesperado"));
+        assertTrue(output.getAll().contains("Caused by: java.lang.IllegalArgumentException: causa original"));
     }
 
     @Test
