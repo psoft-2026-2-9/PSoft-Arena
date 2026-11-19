@@ -46,6 +46,14 @@ class ClienteLlmHttpTests {
         responder("/", status, corpo);
     }
 
+    void responderSemCorpo(int status) {
+        servidor.createContext("/", exchange -> {
+            registrarRequisicao(exchange);
+            exchange.sendResponseHeaders(status, -1);
+            exchange.close();
+        });
+    }
+
     void responder(String contexto, int status, String corpo) {
         servidor.createContext(contexto, exchange -> {
             registrarRequisicao(exchange);
@@ -120,6 +128,17 @@ class ClienteLlmHttpTests {
 
         assertThrows(FalhaAvaliacaoException.class,
                 () -> cliente.enviarPrompt(configuracao(urlBase()), "Avalie"));
+    }
+
+    @Test
+    @DisplayName("Resposta sem corpo gera falha na avaliação")
+    void deveFalharQuandoRespostaNaoTemCorpo() {
+        responderSemCorpo(204);
+
+        FalhaAvaliacaoException erro = assertThrows(FalhaAvaliacaoException.class,
+                () -> cliente.enviarPrompt(configuracao(urlBase()), "Avalie"));
+
+        assertEquals("O modelo grok-2 não retornou uma resposta", erro.getMessage());
     }
 
     @Test
