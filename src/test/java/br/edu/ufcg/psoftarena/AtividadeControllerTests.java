@@ -337,6 +337,9 @@ public class AtividadeControllerTests {
         driver.perform(delete("/problemas/" + problema.getId())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isConflict())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.detail").value("Problema associado a uma atividade não pode ser removido"))
                 .andDo(print());
 
         assertTrue(problemaRepository.existsById(problema.getId()));
