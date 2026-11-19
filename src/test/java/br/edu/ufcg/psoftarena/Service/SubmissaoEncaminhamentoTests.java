@@ -13,7 +13,6 @@ import br.edu.ufcg.psoftarena.Model.Turma;
 import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
 import br.edu.ufcg.psoftarena.Repository.EstudanteRepository;
 import br.edu.ufcg.psoftarena.Repository.SubmissaoRepository;
-import br.edu.ufcg.psoftarena.Repository.TurmaRepository;
 import br.edu.ufcg.psoftarena.Repository.HistoricoEstadoSubmissaoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
@@ -45,8 +45,7 @@ class SubmissaoEncaminhamentoTests {
     private void prepararEnvio() {
         service.atividadeRepository = mock(AtividadeRepository.class);
         service.estudanteRepository = mock(EstudanteRepository.class);
-        service.turmaRepository = mock(TurmaRepository.class);
-        when(service.turmaRepository.existsByIdAndEstudantes_Id(4L, 2L)).thenReturn(true);
+        service.turmaCrudService = mock(TurmaCrudService.class);
         when(service.atividadeRepository.findById(3L)).thenReturn(Optional.of(Atividade.builder().id(3L)
                 .prazo(LocalDateTime.now().plusDays(1)).turma(Turma.builder().id(4L).build()).build()));
         when(service.estudanteRepository.findById(2L))
@@ -90,7 +89,8 @@ class SubmissaoEncaminhamentoTests {
     void estudanteForaDaTurmaNaoSubmete() {
         prepararEnvio();
         service.enfileiradorSubmissoes = mock(EnfileiradorSubmissoes.class);
-        when(service.turmaRepository.existsByIdAndEstudantes_Id(4L, 2L)).thenReturn(false);
+        doThrow(new EstudanteNaoPertenceTurmaException()).when(service.turmaCrudService)
+                .validarEstudantePertenceTurma(4L, 2L);
 
         assertThrows(EstudanteNaoPertenceTurmaException.class,
                 () -> service.submeterSolucao(3L, SubmissaoPostDto.builder()
@@ -114,8 +114,7 @@ class SubmissaoEncaminhamentoTests {
     void deveSalvarComoSubmetidaEEncaminharAutomaticamente(CapturedOutput output) {
         service.atividadeRepository = mock(AtividadeRepository.class);
         service.estudanteRepository = mock(EstudanteRepository.class);
-        service.turmaRepository = mock(TurmaRepository.class);
-        when(service.turmaRepository.existsByIdAndEstudantes_Id(4L, 2L)).thenReturn(true);
+        service.turmaCrudService = mock(TurmaCrudService.class);
         Atividade atividade = Atividade.builder().id(3L)
                 .prazo(LocalDateTime.now().plusDays(1))
                 .turma(Turma.builder().id(4L).build()).build();

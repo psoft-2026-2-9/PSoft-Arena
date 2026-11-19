@@ -1,6 +1,5 @@
 package br.edu.ufcg.psoftarena.Service;
 
-import br.edu.ufcg.psoftarena.Exception.EstudanteNaoPertenceTurmaException;
 import br.edu.ufcg.psoftarena.Exception.RecursoNaoEncontradoException;
 import br.edu.ufcg.psoftarena.Exception.RegraNegocioException;
 
@@ -36,6 +35,9 @@ public class AtividadeCrudPadraoService implements AtividadeCrudService {
 
     @Autowired
     TurmaRepository turmaRepository;
+
+    @Autowired
+    TurmaCrudService turmaCrudService;
 
     @Autowired
     ProblemaRepository problemaRepository;
@@ -113,9 +115,7 @@ public class AtividadeCrudPadraoService implements AtividadeCrudService {
         Atividade atividade = atividadeRepository.findByIdWithDetails(atividadeId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Atividade não encontrada"));
 
-        if (!turmaRepository.existsByIdAndEstudantes_Id(atividade.getTurma().getId(), estudanteId)) {
-            throw new EstudanteNaoPertenceTurmaException();
-        }
+        turmaCrudService.validarEstudantePertenceTurma(atividade.getTurma().getId(), estudanteId);
 
         return toConsultaResponse(atividade);
     }

@@ -2,7 +2,6 @@ package br.edu.ufcg.psoftarena.Service;
 
 import br.edu.ufcg.psoftarena.DTO.SubmissaoPostDto;
 import br.edu.ufcg.psoftarena.DTO.SubmissaoResponseDto;
-import br.edu.ufcg.psoftarena.Exception.EstudanteNaoPertenceTurmaException;
 import br.edu.ufcg.psoftarena.Exception.RecursoNaoEncontradoException;
 import br.edu.ufcg.psoftarena.Exception.RegraNegocioException;
 import br.edu.ufcg.psoftarena.Model.Atividade;
@@ -11,7 +10,6 @@ import br.edu.ufcg.psoftarena.Model.Submissao;
 import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
 import br.edu.ufcg.psoftarena.Repository.EstudanteRepository;
 import br.edu.ufcg.psoftarena.Repository.SubmissaoRepository;
-import br.edu.ufcg.psoftarena.Repository.TurmaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -39,7 +37,7 @@ public class SubmissaoCrudPadraoService implements SubmissaoCrudService {
     EstudanteRepository estudanteRepository;
 
     @Autowired
-    TurmaRepository turmaRepository;
+    TurmaCrudService turmaCrudService;
 
     @Override
     @Transactional
@@ -120,9 +118,7 @@ public class SubmissaoCrudPadraoService implements SubmissaoCrudService {
 
     private Estudante validarEstudanteDaAtividade(Atividade atividade, Long estudanteId) {
         Estudante estudante = getExistingEstudante(estudanteId);
-        if (!turmaRepository.existsByIdAndEstudantes_Id(atividade.getTurma().getId(), estudante.getId())) {
-            throw new EstudanteNaoPertenceTurmaException();
-        }
+        turmaCrudService.validarEstudantePertenceTurma(atividade.getTurma().getId(), estudante.getId());
         return estudante;
     }
 

@@ -10,7 +10,6 @@ import br.edu.ufcg.psoftarena.Model.Turma;
 import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
 import br.edu.ufcg.psoftarena.Repository.EstudanteRepository;
 import br.edu.ufcg.psoftarena.Repository.SubmissaoRepository;
-import br.edu.ufcg.psoftarena.Repository.TurmaRepository;
 import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -48,7 +47,7 @@ class IntegridadePersistenciaTests {
         service.submissaoRepository = mock(SubmissaoRepository.class);
         service.atividadeRepository = mock(AtividadeRepository.class);
         service.estudanteRepository = mock(EstudanteRepository.class);
-        service.turmaRepository = mock(TurmaRepository.class);
+        service.turmaCrudService = mock(TurmaCrudService.class);
         service.estadoSubmissaoService = mock(EstadoSubmissaoService.class);
         service.enfileiradorSubmissoes = mock(EnfileiradorSubmissoes.class);
         Atividade atividade = Atividade.builder().id(1L).prazo(LocalDateTime.now().plusDays(1))
@@ -56,7 +55,6 @@ class IntegridadePersistenciaTests {
         when(service.atividadeRepository.findById(1L)).thenReturn(Optional.of(atividade));
         when(service.estudanteRepository.findById(2L))
                 .thenReturn(Optional.of(Estudante.builder().id(2L).build()));
-        when(service.turmaRepository.existsByIdAndEstudantes_Id(3L, 2L)).thenReturn(true);
         DataIntegrityViolationException causa = new DataIntegrityViolationException("NOT NULL: codigo_fonte");
         when(service.submissaoRepository.saveAndFlush(any(Submissao.class))).thenThrow(causa);
 

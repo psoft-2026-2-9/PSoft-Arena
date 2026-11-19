@@ -135,9 +135,9 @@ public class TurmaCrudPadraoService implements TurmaCrudService {
     @Override
     @Transactional(readOnly = true)
     public void validarEstudantePertenceTurma(Long turmaId, Long estudanteId) {
-        Turma turma = getExistingTurma(turmaId);
+        getExistingTurma(turmaId);
 
-        if (!estudantePertenceTurma(turma, estudanteId)) {
+        if (!turmaRepository.existsByIdAndEstudantes_Id(turmaId, estudanteId)) {
             throw new EstudanteNaoPertenceTurmaException();
         }
     }
