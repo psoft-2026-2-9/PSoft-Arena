@@ -16,7 +16,6 @@ import br.edu.ufcg.psoftarena.Repository.HistoricoEstadoSubmissaoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.MockedStatic;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 
@@ -30,7 +29,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
@@ -117,14 +115,12 @@ class SubmissaoEncaminhamentoTests {
         });
 
         FilaSubmissoes fila = mock(FilaSubmissoes.class);
-        try (MockedStatic<FilaSubmissoes> singleton = mockStatic(FilaSubmissoes.class)) {
-            singleton.when(FilaSubmissoes::getInstance).thenReturn(fila);
-            SubmissaoResponseDto resposta = service.submeterSolucao(3L, SubmissaoPostDto.builder()
-                    .estudanteId(2L).codigoFonte("class Main {}").build());
-            assertEquals("EMFILA", resposta.getStatus());
-            assertEquals(List.of("SUBMETIDA", "EMFILA"), estadosSalvos);
-            verify(fila).adicionar(1L);
-        }
+        service.enfileiradorSubmissoes = new EnfileiradorSubmissoes(fila);
+        SubmissaoResponseDto resposta = service.submeterSolucao(3L, SubmissaoPostDto.builder()
+                .estudanteId(2L).codigoFonte("class Main {}").build());
+        assertEquals("EMFILA", resposta.getStatus());
+        assertEquals(List.of("SUBMETIDA", "EMFILA"), estadosSalvos);
+        verify(fila).adicionar(1L);
 
         String mensagem = "Notificação ao estudante 2: submissão 1 - registrada no estado SUBMETIDA";
         assertEquals(1L, output.getOut().lines().filter(mensagem::equals).count());

@@ -8,16 +8,26 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @Component
 public class EnfileiradorSubmissoes {
 
+    private final FilaSubmissoes fila;
+
+    public EnfileiradorSubmissoes() {
+        this(FilaSubmissoes.getInstance());
+    }
+
+    EnfileiradorSubmissoes(FilaSubmissoes fila) {
+        this.fila = fila;
+    }
+
     public void enfileirarAposCommit(Long submissaoId) {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            FilaSubmissoes.getInstance().adicionar(submissaoId);
+            fila.adicionar(submissaoId);
             return;
         }
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                FilaSubmissoes.getInstance().adicionar(submissaoId);
+                fila.adicionar(submissaoId);
             }
         });
     }

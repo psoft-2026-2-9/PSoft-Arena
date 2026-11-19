@@ -19,11 +19,20 @@ public class ConsumidorFilaSubmissoes {
     SubmissaoRepository submissaoRepository;
 
     private Thread consumidor;
+    private final FilaSubmissoes fila;
+
+    public ConsumidorFilaSubmissoes() {
+        this(FilaSubmissoes.getInstance());
+    }
+
+    ConsumidorFilaSubmissoes(FilaSubmissoes fila) {
+        this.fila = fila;
+    }
 
     @EventListener(ApplicationReadyEvent.class)
     public void iniciar() {
         submissaoRepository.findAllByEstadoSubimissao(new EmFila())
-                .forEach(submissao -> FilaSubmissoes.getInstance().adicionar(submissao.getId()));
+                .forEach(submissao -> fila.adicionar(submissao.getId()));
 
         consumidor = new Thread(this::consumir, "consumidor-fila-submissoes");
         consumidor.setDaemon(true);
@@ -48,7 +57,7 @@ public class ConsumidorFilaSubmissoes {
     private void consumir() {
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                processar(FilaSubmissoes.getInstance().retirar());
+                processar(fila.retirar());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
