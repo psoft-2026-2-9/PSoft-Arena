@@ -5,6 +5,8 @@ import br.edu.ufcg.psoftarena.Model.Problema;
 import br.edu.ufcg.psoftarena.Repository.ProblemaRepository;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -71,6 +73,31 @@ class ProblemaControllerTests {
                 .andExpect(status().isBadRequest());
 
         assertEquals(totalAnterior, repository.count());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"null", "\"\"", "\"   \""})
+    void deveRejeitarItensInvalidosNosRequisitosAoCriarEAtualizar(String itemJson) throws Exception {
+        Problema problema = salvarProblema();
+        long totalAnterior = repository.count();
+
+        for (String campo : List.of("requisitos_funcionais", "requisitos_de_projeto")) {
+            String dadosInvalidos = dados("Arena revisada").replace(
+                    campo.equals("requisitos_funcionais") ? "[\"Listar jogadores\"]" : "[\"Usar Spring\"]",
+                    "[" + itemJson + "]");
+
+            driver.perform(post(URI).contentType(MediaType.APPLICATION_JSON).content(dadosInvalidos))
+                    .andExpect(status().isBadRequest());
+            driver.perform(put(URI + "/{id}", problema.getId())
+                            .contentType(MediaType.APPLICATION_JSON).content(dadosInvalidos))
+                    .andExpect(status().isBadRequest());
+        }
+
+        assertEquals(totalAnterior, repository.count());
+        Problema existente = repository.findById(problema.getId()).orElseThrow();
+        assertEquals("Arena", existente.getTitulo());
+        assertEquals(List.of("Cadastrar jogador"), existente.getRequisitosFuncionais());
+        assertEquals(List.of("Usar Java"), existente.getRequisitosDeProjeto());
     }
 
     @Test

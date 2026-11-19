@@ -50,11 +50,16 @@ class ConsumidorFilaSubmissoesTests {
     @Test
     @DisplayName("Erro ao avaliar uma submissão não interrompe o consumidor")
     void naoDevePropagarErroDaAvaliacao(CapturedOutput output) {
-        doThrow(new IllegalStateException("erro")).when(consumidor.avaliacaoService).avaliarSubmissao(6L);
+        doThrow(new IllegalStateException("erro", new IllegalArgumentException("causa original"))).when(consumidor.avaliacaoService).avaliarSubmissao(6L);
 
         assertDoesNotThrow(() -> consumidor.processar(6L));
 
-        assertTrue(output.getOut().contains("Erro ao processar a submissão 6: erro"));
+        assertTrue(output.getAll().contains("Erro ao processar a submissão 6"));
+        assertTrue(output.getAll().contains("java.lang.IllegalStateException: erro"));
+        assertTrue(output.getAll().contains("Caused by: java.lang.IllegalArgumentException: causa original"));
+
+        assertDoesNotThrow(() -> consumidor.processar(7L));
+        verify(consumidor.avaliacaoService).avaliarSubmissao(7L);
     }
 
     @Test
