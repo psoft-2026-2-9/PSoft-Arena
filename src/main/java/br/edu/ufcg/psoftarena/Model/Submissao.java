@@ -48,15 +48,15 @@ public class Submissao {
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    private EstadoSubimissao estadoSubimissao = new Submetida();
+    private EstadoSubimissao estadoSubmissao = new Submetida();
 
     public void proximoEstado() {
-        estadoSubimissao.proximoEstado(this);
+        estadoSubmissao.proximoEstado(this);
     }
 
     public void falhar() {
-        estadoSubimissao.falhar(this);
+        estadoSubmissao.falhar(this);
     }
 
-    public void setEstadoSubmissao(EstadoSubimissao estadoSubmissao) { this.estadoSubimissao = estadoSubmissao; }
+    public void setEstadoSubmissao(EstadoSubimissao estadoSubmissao) { this.estadoSubmissao = estadoSubmissao; }
 }
