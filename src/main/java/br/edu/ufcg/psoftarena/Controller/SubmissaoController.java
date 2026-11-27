@@ -1,8 +1,10 @@
 package br.edu.ufcg.psoftarena.Controller;
 
+import br.edu.ufcg.psoftarena.DTO.ResultadoAvaliacaoResponseDto;
 import br.edu.ufcg.psoftarena.DTO.SubmissaoPostDto;
 import br.edu.ufcg.psoftarena.DTO.SubmissaoResponseDto;
 import java.util.List;
+import br.edu.ufcg.psoftarena.Service.AvaliacaoService;
 import br.edu.ufcg.psoftarena.Service.SubmissaoCrudService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,9 @@ public class SubmissaoController {
     @Autowired
     SubmissaoCrudService submissaoCrudService;
 
+    @Autowired
+    AvaliacaoService avaliacaoService;
+
     @GetMapping
     public ResponseEntity<List<SubmissaoResponseDto>> listarSubmissoes(
             @PathVariable Long atividadeId, @RequestParam Long estudanteId) {
@@ -29,6 +34,13 @@ public class SubmissaoController {
             @PathVariable Long atividadeId, @PathVariable Long submissaoId,
             @RequestParam Long estudanteId) {
         return ResponseEntity.ok(submissaoCrudService.consultarSubmissao(atividadeId, submissaoId, estudanteId));
+    }
+
+    @GetMapping("/{submissaoId}/avaliacao")
+    public ResponseEntity<ResultadoAvaliacaoResponseDto> consultarResultado(
+            @PathVariable Long atividadeId, @PathVariable Long submissaoId,
+            @RequestParam Long estudanteId) {
+        return ResponseEntity.ok(avaliacaoService.consultarResultado(atividadeId, submissaoId, estudanteId));
     }
 
     @PostMapping

@@ -6,21 +6,31 @@ import br.edu.ufcg.psoftarena.ENUM.StatusProblema;
 import br.edu.ufcg.psoftarena.ENUM.StatusTurma;
 import br.edu.ufcg.psoftarena.ENUM.TipoEstrategia;
 import br.edu.ufcg.psoftarena.Model.Atividade;
+import br.edu.ufcg.psoftarena.Model.Avaliacao;
 import br.edu.ufcg.psoftarena.Model.Estudante;
 import br.edu.ufcg.psoftarena.Model.Estrategia;
 import br.edu.ufcg.psoftarena.Model.Problema;
 import br.edu.ufcg.psoftarena.Model.Professor;
+import br.edu.ufcg.psoftarena.Model.ResultadoModelo;
 import br.edu.ufcg.psoftarena.Model.State.Atividade.AtividadeAberta;
 import br.edu.ufcg.psoftarena.Model.State.Atividade.AtividadeConcluida;
 import br.edu.ufcg.psoftarena.Model.State.Atividade.EstadoAtividade;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.Concluida;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.EmFila;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.EstadoSubmissao;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.Falha;
 import br.edu.ufcg.psoftarena.Model.State.Submissao.Processando;
+import br.edu.ufcg.psoftarena.Model.State.Submissao.Submetida;
+import br.edu.ufcg.psoftarena.Model.Submissao;
 import br.edu.ufcg.psoftarena.Model.Turma;
 import br.edu.ufcg.psoftarena.Repository.AtividadeRepository;
+import br.edu.ufcg.psoftarena.Repository.AvaliacaoRepository;
 import br.edu.ufcg.psoftarena.Repository.EstudanteRepository;
 import br.edu.ufcg.psoftarena.Repository.EstrategiaRepository;
 import br.edu.ufcg.psoftarena.Repository.HistoricoEstadoSubmissaoRepository;
 import br.edu.ufcg.psoftarena.Repository.ProblemaRepository;
 import br.edu.ufcg.psoftarena.Repository.ProfessorRepository;
+import br.edu.ufcg.psoftarena.Repository.ResultadoModeloRepository;
 import br.edu.ufcg.psoftarena.Repository.SubmissaoRepository;
 import br.edu.ufcg.psoftarena.Repository.TurmaRepository;
 import br.edu.ufcg.psoftarena.Service.EnfileiradorSubmissoes;
@@ -76,6 +86,12 @@ public class SubmissaoControllerTests {
     SubmissaoRepository submissaoRepository;
 
     @Autowired
+    AvaliacaoRepository avaliacaoRepository;
+
+    @Autowired
+    ResultadoModeloRepository resultadoModeloRepository;
+
+    @Autowired
     HistoricoEstadoSubmissaoRepository historicoRepository;
 
     @Autowired
@@ -123,6 +139,8 @@ public class SubmissaoControllerTests {
 
     @AfterEach
     void tearDown() {
+        resultadoModeloRepository.deleteAll();
+        avaliacaoRepository.deleteAll();
         historicoRepository.deleteAll();
         submissaoRepository.deleteAll();
         atividadeRepository.deleteAll();
@@ -214,6 +232,38 @@ public class SubmissaoControllerTests {
                 .andDo(print())
                 .andReturn().getResponse().getContentAsString();
         return objectMapper.readValue(responseJSONString, SubmissaoResponseDto.class);
+    }
+
+    String uriAvaliacao(Long atividadeId, Long submissaoId) {
+        return uriSubmissao(atividadeId) + "/" + submissaoId + "/avaliacao";
+    }
+
+    Submissao mudarEstadoSubmissao(Long submissaoId, EstadoSubmissao estado) {
+        Submissao submissao = submissaoRepository.findById(submissaoId).orElseThrow();
+        submissao.mudarEstado(estado);
+        return submissaoRepository.saveAndFlush(submissao);
+    }
+
+    Avaliacao salvarAvaliacao(Long submissaoId) {
+        Submissao submissao = submissaoRepository.findById(submissaoId).orElseThrow();
+        return avaliacaoRepository.save(Avaliacao.builder()
+                .submissao(submissao)
+                .nota(8.5)
+                .justificativa("Classes coesas e baixo acoplamento")
+                .evidencias(List.of("Arena depende da interface Jogador"))
+                .dataHora(LocalDateTime.now())
+                .build());
+    }
+
+    ResultadoModelo salvarResultadoFalha(Long submissaoId, String erro) {
+        Submissao submissao = submissaoRepository.findById(submissaoId).orElseThrow();
+        return resultadoModeloRepository.save(ResultadoModelo.builder()
+                .submissao(submissao)
+                .modelo("grok-2")
+                .sucesso(false)
+                .erro(erro)
+                .dataHora(LocalDateTime.now())
+                .build());
     }
 
     @Test
@@ -556,5 +606,140 @@ public class SubmissaoControllerTests {
         assertEquals(1, primeira.getVersao());
         assertEquals(1, segunda.getVersao());
         assertEquals(2, submissaoRepository.findAll().size());
+    }
+
+    @Test
+    @DisplayName("Estudante consulta resultado de submissão concluída")
+    void testConsultarResultadoConcluido() throws Exception {
+        SubmissaoResponseDto submissao = submeterComSucesso(atividade.getId(), estudante.getId());
+        mudarEstadoSubmissao(submissao.getId(), new Concluida());
+        salvarAvaliacao(submissao.getId());
+
+        driver.perform(get(uriAvaliacao(atividade.getId(), submissao.getId()))
+                        .param("estudanteId", estudante.getId().toString()))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.submissao_id").value(submissao.getId()))
+                .andExpect(jsonPath("$.nota").value(8.5))
+                .andExpect(jsonPath("$.justificativa").value("Classes coesas e baixo acoplamento"))
+                .andExpect(jsonPath("$.evidencias[0]").value("Arena depende da interface Jogador"))
+                .andExpect(jsonPath("$.situacao").value("CONCLUIDA"))
+                .andExpect(jsonPath("$.data_hora_avaliacao").exists())
+                .andExpect(jsonPath("$.erros").isEmpty())
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("Estudante consulta resultado de submissão com falha na avaliação")
+    void testConsultarResultadoComFalha() throws Exception {
+        SubmissaoResponseDto submissao = submeterComSucesso(atividade.getId(), estudante.getId());
+        mudarEstadoSubmissao(submissao.getId(), new Falha());
+        salvarResultadoFalha(submissao.getId(), "Falha na comunicação com o modelo grok-2");
+
+        driver.perform(get(uriAvaliacao(atividade.getId(), submissao.getId()))
+                        .param("estudanteId", estudante.getId().toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.submissao_id").value(submissao.getId()))
+                .andExpect(jsonPath("$.nota").isEmpty())
+                .andExpect(jsonPath("$.justificativa").isEmpty())
+                .andExpect(jsonPath("$.evidencias").isEmpty())
+                .andExpect(jsonPath("$.situacao").value("FALHA"))
+                .andExpect(jsonPath("$.erros[0]").value("Falha na comunicação com o modelo grok-2"))
+                .andExpect(jsonPath("$.data_hora_avaliacao").exists())
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("Estudante não consulta resultado de submissão de outro estudante")
+    void testConsultarResultadoDeOutroEstudante() throws Exception {
+        Estudante outro = salvarEstudante();
+        matricularEstudanteNaTurma(outro);
+        SubmissaoResponseDto submissao = submeterComSucesso(atividade.getId(), outro.getId());
+        mudarEstadoSubmissao(submissao.getId(), new Concluida());
+        salvarAvaliacao(submissao.getId());
+
+        driver.perform(get(uriAvaliacao(atividade.getId(), submissao.getId()))
+                        .param("estudanteId", estudante.getId().toString()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Submissão não encontrada"))
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("Estudante fora da turma não consulta resultado")
+    void testConsultarResultadoComEstudanteForaDaTurma() throws Exception {
+        SubmissaoResponseDto submissao = submeterComSucesso(atividade.getId(), estudante.getId());
+        mudarEstadoSubmissao(submissao.getId(), new Concluida());
+        salvarAvaliacao(submissao.getId());
+        Estudante estudanteFora = salvarEstudante();
+
+        driver.perform(get(uriAvaliacao(atividade.getId(), submissao.getId()))
+                        .param("estudanteId", estudanteFora.getId().toString()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.detail").value("Estudante não pertence à turma"))
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("Resultado indisponível enquanto a avaliação não estiver concluída")
+    void testConsultarResultadoEnquantoNaoConcluida() throws Exception {
+        SubmissaoResponseDto submissao = submeterComSucesso(atividade.getId(), estudante.getId());
+
+        for (EstadoSubmissao estado : List.of(new Submetida(), new EmFila(), new Processando())) {
+            mudarEstadoSubmissao(submissao.getId(), estado);
+
+            driver.perform(get(uriAvaliacao(atividade.getId(), submissao.getId()))
+                            .param("estudanteId", estudante.getId().toString()))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.detail").value("Avaliação ainda não concluída"))
+                    .andDo(print());
+        }
+    }
+
+    @Test
+    @DisplayName("Consulta de resultado com atividade, estudante ou submissão inexistente retorna 404")
+    void testConsultarResultadoComRecursosInexistentes() throws Exception {
+        SubmissaoResponseDto submissao = submeterComSucesso(atividade.getId(), estudante.getId());
+
+        driver.perform(get(uriAvaliacao(999L, submissao.getId()))
+                        .param("estudanteId", estudante.getId().toString()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Atividade não encontrada"))
+                .andDo(print());
+
+        driver.perform(get(uriAvaliacao(atividade.getId(), submissao.getId()))
+                        .param("estudanteId", "999"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Estudante não encontrado"))
+                .andDo(print());
+
+        driver.perform(get(uriAvaliacao(atividade.getId(), 999L))
+                        .param("estudanteId", estudante.getId().toString()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Submissão não encontrada"))
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("Consulta de resultado sem estudanteId retorna 400")
+    void testConsultarResultadoSemEstudanteId() throws Exception {
+        SubmissaoResponseDto submissao = submeterComSucesso(atividade.getId(), estudante.getId());
+
+        driver.perform(get(uriAvaliacao(atividade.getId(), submissao.getId())))
+                .andExpect(status().isBadRequest())
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("Submissão concluída sem avaliação persistida retorna 404")
+    void testConsultarResultadoConcluidoSemAvaliacao() throws Exception {
+        SubmissaoResponseDto submissao = submeterComSucesso(atividade.getId(), estudante.getId());
+        mudarEstadoSubmissao(submissao.getId(), new Concluida());
+
+        driver.perform(get(uriAvaliacao(atividade.getId(), submissao.getId()))
+                        .param("estudanteId", estudante.getId().toString()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Resultado da avaliação não encontrado"))
+                .andDo(print());
     }
 }
