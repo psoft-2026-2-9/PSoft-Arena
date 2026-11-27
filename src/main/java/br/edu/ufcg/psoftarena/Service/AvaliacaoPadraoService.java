@@ -2,7 +2,9 @@ package br.edu.ufcg.psoftarena.Service;
 
 import br.edu.ufcg.psoftarena.Client.ClienteLlm;
 import br.edu.ufcg.psoftarena.Client.ConfiguracaoLlm;
+import br.edu.ufcg.psoftarena.DTO.ResultadoAvaliacaoResponseDto;
 import br.edu.ufcg.psoftarena.DTO.RespostaLlmDto;
+import br.edu.ufcg.psoftarena.DTO.SubmissaoResponseDto;
 import br.edu.ufcg.psoftarena.Exception.FalhaAvaliacaoException;
 import br.edu.ufcg.psoftarena.Exception.RecursoNaoEncontradoException;
 import br.edu.ufcg.psoftarena.Exception.RegraNegocioException;
@@ -17,10 +19,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -53,6 +58,12 @@ public class AvaliacaoPadraoService implements AvaliacaoService {
     @Autowired
     TransactionTemplate transactionTemplate;
 
+    @Autowired
+    SubmissaoCrudService submissaoCrudService;
+
+    @Autowired
+    NotificadorEstudante notificadorEstudante;
+
     @Override
     public void avaliarSubmissao(Long submissaoId) {
         Submissao submissao = getExistingSubmissao(submissaoId);
@@ -67,6 +78,52 @@ public class AvaliacaoPadraoService implements AvaliacaoService {
             log.error("Falha inesperada ao avaliar a submissão {}", submissaoId, e);
             estadoSubmissaoService.falhar(getExistingSubmissao(submissaoId));
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResultadoAvaliacaoResponseDto consultarResultado(
+            Long atividadeId, Long submissaoId, Long estudanteId) {
+        SubmissaoResponseDto submissao = submissaoCrudService
+                .consultarSubmissao(atividadeId, submissaoId, estudanteId);
+        String situacao = submissao.getStatus();
+
+        if ("FALHA".equals(situacao)) {
+            List<ResultadoModelo> resultados = resultadoModeloRepository
+                    .findBySubmissaoIdOrderByIdAsc(submissaoId);
+            return ResultadoAvaliacaoResponseDto.builder()
+                    .submissaoId(submissaoId)
+                    .evidencias(new ArrayList<>())
+                    .situacao(situacao)
+                    .dataHoraAvaliacao(resultados.stream()
+                            .map(ResultadoModelo::getDataHora)
+                            .filter(Objects::nonNull)
+                            .max(LocalDateTime::compareTo)
+                            .orElse(null))
+                    .erros(resultados.stream()
+                            .map(ResultadoModelo::getErro)
+                            .filter(Objects::nonNull)
+                            .toList())
+                    .build();
+        }
+
+        if (!"CONCLUIDA".equals(situacao)) {
+            throw new RegraNegocioException("Avaliação ainda não concluída");
+        }
+
+        Avaliacao avaliacao = avaliacaoRepository.findBySubmissaoId(submissaoId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException(
+                        "Resultado da avaliação não encontrado"));
+
+        return ResultadoAvaliacaoResponseDto.builder()
+                .submissaoId(submissaoId)
+                .nota(avaliacao.getNota())
+                .justificativa(avaliacao.getJustificativa())
+                .evidencias(new ArrayList<>(avaliacao.getEvidencias()))
+                .situacao(situacao)
+                .dataHoraAvaliacao(avaliacao.getDataHora())
+                .erros(new ArrayList<>())
+                .build();
     }
 
     private List<ResultadoModelo> avaliarComModelos(Submissao submissao) {
@@ -112,8 +169,12 @@ public class AvaliacaoPadraoService implements AvaliacaoService {
         if (resultados.stream().allMatch(ResultadoModelo::isSucesso)) {
             avaliacaoRepository.save(Avaliacao.compor(submissao, resultados));
             estadoSubmissaoService.concluir(submissao);
+            notificadorEstudante.notificar(submissao.getEstudante(),
+                    "resultado da avaliação disponível para a submissão " + submissao.getId());
         } else {
             estadoSubmissaoService.falhar(submissao);
+            notificadorEstudante.notificar(submissao.getEstudante(),
+                    "resultado da avaliação (falha) disponível para a submissão " + submissao.getId());
         }
     }
 

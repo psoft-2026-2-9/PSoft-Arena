@@ -223,6 +223,8 @@ public class AvaliacaoServiceTests {
         String prefixo = "Notificação ao estudante " + estudante.getId() + ": submissão " + submissao.getId();
         assertTrue(output.getOut().contains(prefixo + " - EMFILA -> PROCESSANDO"));
         assertTrue(output.getOut().contains(prefixo + " - PROCESSANDO -> CONCLUIDA"));
+        assertTrue(output.getOut().contains("Notificação ao estudante " + estudante.getId()
+                + ": resultado da avaliação disponível para a submissão " + submissao.getId()));
     }
 
     @Test
@@ -256,7 +258,7 @@ public class AvaliacaoServiceTests {
 
     @Test
     @DisplayName("Erro na API do modelo resulta em Falha e registra o erro do modelo")
-    void testFalhaNaApiDoModelo() {
+    void testFalhaNaApiDoModelo(CapturedOutput output) {
         when(clienteLlm.enviarPrompt(any(), anyString()))
                 .thenThrow(new FalhaAvaliacaoException("Falha na comunicação com o modelo grok-2: 500"));
         Submissao submissao = salvarSubmissao(new EmFila());
@@ -271,6 +273,8 @@ public class AvaliacaoServiceTests {
         assertEquals("Falha na comunicação com o modelo grok-2: 500", resultados.getFirst().getErro());
         assertNull(resultados.getFirst().getNota());
         assertEquals(List.of("EMFILA->PROCESSANDO", "PROCESSANDO->FALHA"), transicoes(submissao.getId()));
+        assertTrue(output.getOut().contains("Notificação ao estudante " + estudante.getId()
+                + ": resultado da avaliação (falha) disponível para a submissão " + submissao.getId()));
     }
 
     @Test
